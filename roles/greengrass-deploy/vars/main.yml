@@ -1,0 +1,13 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# greengrass variables for deploying to greengrass cores.
+
+# At the moment, whether to deploy or not is driven by a dict like the
+# following, where the first keys are greengrass group names:
+#greengrass_deploy:
+#  group1:
+#    redeploy: true
+#  group2:
+#    deploy: true
+# The above will redeploy group1, and perform a new deployment to group2.

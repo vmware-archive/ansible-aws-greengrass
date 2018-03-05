@@ -1,0 +1,92 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# This role configures a set of developer tools for our environment.
+- name: Ensure groff is installed.
+  apt: name=groff state=installed
+  become_user: root
+  when:
+    - ansible_os_family == "Debian"
+    - not ansible_check_mode
+
+- name: Ensure sudo is installed.
+  apt: name=sudo state=installed
+  become_user: root
+  when:
+    - ansible_os_family == "Debian"
+    - not ansible_check_mode
+
+- name: Ensure unzip is installed.
+  apt: name=unzip state=installed
+  become_user: root
+  when:
+    - ansible_os_family == "Debian"
+    - not ansible_check_mode
+
+- name: install-pip
+  package:
+    name: python-pip
+    state: present
+  become: yes
+  become_user: root
+  when:
+    - ansible_os_family == "Debian"
+    - not ansible_check_mode
+
+- name: install-aws-cli (system)
+  pip:
+    name: awscli
+    state: latest
+  become: yes
+  become_user: root
+  when:
+    - ansible_os_family == "Debian"
+    - not ansible_check_mode
+
+# Installing with --user for OSX.  OSX system Python is a real mess.
+- name: install-aws-cli (user)
+  pip:
+    name: awscli
+    state: latest
+    extra_args: --user
+  when:
+    - ansible_os_family == "Debian"
+    - not ansible_check_mode
+
+- name: Add aws cmd line to path
+  command: pybin put
+  when:
+    - ansible_os_family == "Darwin"
+    - not ansible_check_mode
+
+- file:
+    path: ~/.aws
+    state: directory
+    mode: 0755
+  when: not ansible_check_mode
+
+- name: Setup AWS CLI credentials
+  template:
+    src: aws_credentials.j2
+    dest: ~/.aws/credentials
+    backup: yes
+  when: not ansible_check_mode
+
+- name: Setup AWS CLI config
+  template:
+    src: aws_config.j2
+    dest: ~/.aws/config
+    backup: yes
+  when: not ansible_check_mode
+
+- name: Check if aws cli is now available
+  shell: command -v aws >/dev/null 2>&1
+  register: is_aws_on_path
+  ignore_errors: yes
+
+- name: warn on path
+  debug: msg="You may need to add the python installation path to your $PATH"
+  when:
+    - is_aws_on_path.changed is defined
+    - is_aws_on_path.changed
+    - is_aws_on_path.rc != 0

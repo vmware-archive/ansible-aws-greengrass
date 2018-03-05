@@ -1,0 +1,7 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# This role deploys lambda functions for AWS execution.
+
+# Import the real tasks, in a unique file name for better navigation.
+- include_tasks: lambda_deploy.yml

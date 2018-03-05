@@ -1,0 +1,14 @@
+[
+  {% for lambda in lambdas %}
+  {
+    "FunctionArn": "{{ lambda_version_arns[loop.index0] }}",
+    "FunctionConfiguration": {
+    "Environment": {},
+    "MemorySize": {{ lambda.memory | default(16384) }},
+    "Pinned": true,
+    "Timeout": {{ lambda.timeout | default(3) }}
+  }{{',
+  "Id": "%s"' % lambda.id if "id" in lambda else "" }}
+  }{{ "," if not loop.last else "" }}
+  {% endfor %}
+]

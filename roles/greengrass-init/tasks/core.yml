@@ -1,0 +1,275 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# Create the necessary bits for a Greengrass core to run.
+- name: debug gg group
+  debug: msg="Creating greengrass group and core for {{ greengrass_group_name }}"
+
+- name: set greengrass_group_arn
+  set_fact:
+    greengrass_group_arn: "{{ greengrass_groups_json | json_query(group_arn_query) }}"
+    greengrass_group_id: "{{ greengrass_groups_json | json_query(group_id_query) }}"
+  vars:
+    group_arn_query: "Groups[?Name=='{{greengrass_group_name}}'].Arn | [0]"
+    group_id_query: "Groups[?Name=='{{greengrass_group_name}}'].Id | [0]"
+  when: greengrass_groups_json is defined
+
+- name: Create a greengrass group
+  command: aws greengrass create-group --name "{{ greengrass_group_name }}"
+  register: greengrass_group_create
+  when:
+    - greengrass_group_list is defined
+    - greengrass_group_name not in greengrass_group_list
+
+- name: fetch greengrass group id,arn when created
+  set_fact:
+    greengrass_group_id: "{{ greengrass_group_create.stdout | from_json | json_query('Id') }}"
+    greengrass_group_arn: "{{ greengrass_group_create.stdout | from_json | json_query('Arn') }}"
+  when: greengrass_group_create.changed
+
+- name: Set initial dict of group details
+  set_fact:
+    _append_dict: {}
+
+- name: Add group id to collected data
+  set_fact:
+    _entry: "{ 'id': '{{ greengrass_group_id }}' }"
+  when: greengrass_group_id is defined
+
+- name: Add group id to collected data
+  set_fact:
+    _append_dict: "{{ _append_dict | combine ( _entry ) }}"
+  when: greengrass_group_id is defined
+
+- name: Add group arn to collected data
+  set_fact:
+    _entry: "{ 'arn': '{{ greengrass_group_arn }}' }"
+  when: greengrass_group_arn is defined
+
+- name: Add group arn to collected data
+  set_fact:
+    _append_dict: "{{ _append_dict | combine ( _entry ) }}"
+  when: greengrass_group_arn is defined
+
+# We are following the convention from AWS Console of [groupname]_Core
+- name: set core_name
+  set_fact:
+    core_name: "{{ greengrass_group_name }}_Core"
+
+- name: Create a policy for core
+  command: aws iot create-policy
+    --policy-name '{{ core_name }}-policy'
+    --policy-document {{ greengrass_core_policy }}
+  register: iot_core_policy_create
+  when:
+    - iot_thing_policy_list is defined
+    - "core_name ~ '-policy' not in iot_thing_policy_list"
+
+- name: Create our greengrass core for the group
+  command: aws greengrass create-core-definition --name "{{ core_name }}"
+  register: greengrass_core_create
+  when:
+    - greengrass_core_list is defined
+    - core_name not in greengrass_core_list
+
+- name: fetch greengrass core id when created
+  set_fact:
+    core_id: "{{ greengrass_core_create.stdout | from_json | json_query('Id') }}"
+  when: greengrass_core_create.changed
+
+- name: debug gg cores
+  debug: var=greengrass_cores_json
+
+- name: fetch greengrass core id when existing
+  set_fact:
+    core_id: "{{ greengrass_cores_json | json_query(id_query) }}"
+  vars:
+    id_query: "Definitions[?Name=='{{ core_name }}'].Id | [0]"
+  when:
+    - greengrass_cores_json is defined
+    - not greengrass_core_create.changed
+
+- name: Create a greengrass core thing
+  block:
+    - debug:
+        msg: "Creating greengrass core {{ core_name }}."
+    - command: aws iot create-thing --thing-name "{{ core_name }}"
+      register: iot_thing_create_core
+    - set_fact:
+        core_arn: "{{ iot_thing_create_core.stdout | from_json | json_query('thingArn') }}"
+    - command: aws iot create-keys-and-certificate --set-as-active
+      register: core_keys_and_certs
+    - set_fact:
+        core_certificate_pem: >
+          {{ core_keys_and_certs.stdout |
+          from_json | json_query('certificatePem') }}
+    - set_fact:
+        core_certificate_key: "{{ core_keys_and_certs.stdout | from_json | json_query('keyPair.PrivateKey') }}"
+    - set_fact:
+        core_certificate_arn: "{{ core_keys_and_certs.stdout | from_json | json_query('certificateArn') }}"
+    - name: create temporary directory for core config
+      tempfile:
+        state: directory
+        suffix: ggc
+      register: core_temp
+    - file:
+        path: "{{ core_temp.path }}/config"
+        state: directory
+    - file:
+        path: "{{ core_temp.path }}/certs"
+        state: directory
+    - name: Template out core config
+      template:
+        src: core_config.json.j2
+        dest: "{{ core_temp.path }}/config/config.json"
+    - copy:
+        content: "{{ core_certificate_key }}"
+        dest: "{{ core_temp.path }}/certs/{{ core_name }}.private.key"
+    - copy:
+        content: "{{ core_certificate_pem }}"
+        dest: "{{ core_temp.path }}/certs/{{ core_name }}.cert.pem"
+    - archive:
+        path: "{{ core_temp.path }}/c*/*"
+        dest: "{{ core_temp.path }}/{{ core_name }}-setup.tar.gz"
+    - name: upload-greengrass-config-s3
+      aws_s3:
+        bucket: "{{ greengrass_s3_bucket }}"
+        object: "{{ core_name }}-setup.tar.gz"
+        src: "{{ core_temp.path }}/{{ core_name }}-setup.tar.gz"
+        mode: put
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+      when: greengrass_s3_bucket is defined and not skip_s3_uploads
+    - command: aws iot attach-principal-policy
+        --policy-name '{{ core_name }}-policy'
+        --principal '{{ core_certificate_arn }}'
+    - command: aws iot attach-thing-principal
+        --thing-name '{{ core_name }}'
+        --principal '{{ core_certificate_arn }}'
+  when:
+    - iot_thing_list is defined
+    - core_name not in iot_thing_list
+
+- name: Fetch the core certificate ARN if we didnt just create it
+  block:
+    - command: aws iot list-thing-principals --thing-name {{ core_name }}
+      register: thing_principals
+    - set_fact:
+        thing_principals_json: "{{ thing_principals.stdout | from_json }}"
+      when: thing_principals.changed
+    - set_fact:
+        core_certificate_arn: "{{ thing_principals_json | json_query(cert_arn_query) }}"
+      vars:
+        cert_arn_query: "principals | [0]"
+      when: thing_principals.changed
+  when: core_certificate_arn is undefined
+
+- name: List core definition versions
+  command: aws greengrass list-core-definition-versions --core-definition-id {{ core_id }}
+  register: core_definition_versions
+  when: core_id is defined
+
+- name: set core_definition_versions json
+  set_fact:
+    core_definition_versions_json: "{{ core_definition_versions.stdout | from_json }}"
+  when: core_definition_versions.changed
+
+- name: check for core definition version
+  set_fact:
+    core_definition_version: "{{ core_definition_versions_json | json_query(def_query) }}"
+    core_definition_version_arn: "{{ core_definition_versions_json | json_query(arn_query) }}"
+  vars:
+    def_query: "Versions[?Id=='{{ core_id }}'].Version | [0]"
+    arn_query: "Versions[?Id=='{{ core_id }}'].Arn | [0]"
+  when: core_definition_versions_json is defined
+
+- name: Create a core definition version
+  block:
+    - tempfile:
+        state: directory
+        suffix: core_def
+      register: tmp_core
+    - name: Template out core config
+      template:
+        src: core_definition.json.j2
+        dest: "{{ tmp_core.path }}/core_definition.json"
+    - name: Create core definition version
+      command: aws greengrass create-core-definition-version
+        --core-definition-id {{ core_id }}
+        --cores file://{{ tmp_core.path }}/core_definition.json
+      register: create_core_definition_version
+  when:
+    - core_definition_version is defined
+    - not core_definition_version
+
+- name: extract core definition version variables
+  set_fact:
+    core_definition_version: "{{ create_core_definition_version.stdout | from_json | json_query('Version') }}"
+    core_definition_version_arn: "{{ create_core_definition_version.stdout | from_json | json_query('Arn') }}"
+  when: create_core_definition_version.changed
+
+- name: List group versions
+  command: aws greengrass list-group-versions
+    --group-id {{ greengrass_group_id }}
+  register: group_versions
+  when:
+    - greengrass_group_id is defined
+
+- name: set group_versions json
+  set_fact:
+    group_versions_json: "{{ group_versions.stdout | from_json }}"
+  when: group_versions.changed
+
+- name: check for group version
+  set_fact:
+    group_version: "{{ group_versions_json | json_query(group_version_query) }}"
+    group_version_id: "{{ group_versions_json | json_query(group_version_id_query) }}"
+  vars:
+    group_version_query: "Versions[?Id=='{{ greengrass_group_id }}'].Version | [0]"
+    group_version_id_query: "Versions[?Id=='{{ greengrass_group_id }}'].Id | [0]"
+  when:
+    - group_versions_json is defined
+
+- name: Create a group version
+  block:
+    - name: Create core definition version
+      command: aws greengrass create-group-version
+        --group-id {{ greengrass_group_id }}
+        --core-definition-version-arn {{ core_definition_version_arn }}
+      register: create_group_version
+  when:
+    - group_version is defined
+    - not group_version
+
+- name: set group_version json
+  set_fact:
+    group_version_json: "{{ create_group_version.stdout | from_json }}"
+  when: create_group_version.changed
+
+- name: select out newly created group version
+  set_fact:
+    group_version: "{{ group_version_json | json_query(group_version_query) }}"
+    group_version_id: "{{ group_version_json | json_query(group_version_id_query) }}"
+  vars:
+    group_version_query: "Version"
+    group_version_id_query: "Id"
+  when:
+    - group_version_json is defined
+
+- name: Add group version id to collected data
+  set_fact:
+    _entry: "{ 'groupVersionId': '{{ group_version }}' }"
+  when: group_version_id is defined
+
+- name: Add group version id to collected data
+  set_fact:
+    _append_dict: "{{ _append_dict | combine ( _entry ) }}"
+  when: group_version_id is defined
+
+- name: Add details to collected data
+  set_fact:
+    ggc_groups: "{{ ggc_groups | combine ( { greengrass_group_name: _append_dict } ) }}"
+  when: _append_dict is defined
+
+- name: debug gg group data
+  debug: var=ggc_groups

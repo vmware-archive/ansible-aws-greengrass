@@ -1,0 +1,138 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# This role sets up the AWS features for greengrass on espwine
+# Currently assumes AWS credentials are already set up and AWS CLI is present.
+
+- import_tasks: lambda.yml
+  tags: greengrass-lambda
+
+- name: Get IoT host
+  command: aws iot describe-endpoint
+  register: describe_endpoint
+
+- name: set IoT host fact
+  set_fact:
+    iot_host: "{{ describe_endpoint.stdout | from_json | json_query(iot_host_query)}}"
+  when: describe_endpoint.changed and describe_endpoint.rc == 0
+  vars:
+    iot_host_query: "endpointAddress"
+
+- name: Get service role
+  command: aws greengrass get-service-role-for-account
+  register: service_role
+  failed_when: service_role.changed and service_role.rc != 0 and service_role.rc != 255
+
+- name: Create service role
+  command: aws iam create-role --role-name Greengrass-Service-Role --assume-role-policy-document {{ greengrass_service_role }}
+  register: iam_service_role_create
+  when: service_role.changed and service_role.rc == 255
+
+- name: set service role fact
+  set_fact:
+    service_role_arn: "{{ iam_service_role_create.stdout | from_json | json_query(role_arn_query)}}"
+  when: iam_service_role_create.changed
+  vars:
+    role_arn_query: "Role.Arn"
+
+- name: Attach policies to service role
+  command: >
+    aws iam attach-role-policy
+    --policy-arn {{ item }}
+    --role-name Greengrass-Service-Role
+  register: iam_service_role_attach
+  with_items:
+    - arn:aws:iam::aws:policy/service-role/AWSGreengrassResourceAccessRolePolicy
+    - arn:aws:iam::aws:policy/AWSLambdaReadOnlyAccess
+    - arn:aws:iam::aws:policy/AWSIoTFullAccess
+  when: iam_service_role_create.changed
+
+- name: Associate service role
+  command: aws greengrass associate-service-role-to-account --role-arn {{ service_role_arn }}
+  when: service_role_arn is defined
+
+- name: List greengrass groups
+  command: aws greengrass list-groups
+  register: greengrass_groups
+
+- name: set greengrass_groups json
+  set_fact:
+    greengrass_groups_json: "{{ greengrass_groups.stdout | from_json }}"
+  when: greengrass_groups.changed
+
+- name: set greengrass_group_list
+  set_fact:
+    greengrass_group_list: "{{ greengrass_groups_json | json_query('Groups[*].Name') }}"
+  when: greengrass_groups_json is defined
+
+- name: debug gg groups
+  debug: var=greengrass_groups_json
+
+- name: List greengrass cores
+  command: aws greengrass list-core-definitions
+  register: greengrass_cores
+
+- name: set greengrass_cores json
+  set_fact:
+    greengrass_cores_json: "{{ greengrass_cores.stdout | from_json }}"
+  when: greengrass_cores.changed
+
+- name: set greengrass_core_list list
+  set_fact:
+    greengrass_core_list: "{{ greengrass_cores_json | json_query('Definitions[*].Name') }}"
+  when: greengrass_cores_json is defined
+
+- name: List iot things
+  command: aws iot list-things
+  register: iot_things
+
+- name: set iot_things json
+  set_fact:
+    iot_things_json: "{{ iot_things.stdout | from_json }}"
+  when: iot_things.changed
+
+- name: set iot_thing_list list
+  set_fact:
+    iot_thing_list: "{{ iot_things_json | json_query('things[*].thingName') }}"
+  when: iot_things_json is defined
+
+- name: debug gg devices
+  debug: var=iot_thing_list
+
+- name: List iot thing policies
+  command: aws iot list-policies
+  register: iot_thing_policies
+
+- name: set iot_thing_policies json
+  set_fact:
+    iot_thing_policies_json: "{{ iot_thing_policies.stdout | from_json }}"
+  when: iot_thing_policies.changed
+
+- name: set iot_thing_policy_list
+  set_fact:
+    iot_thing_policy_list: "{{ iot_thing_policies_json | json_query('policies[*].policyName') }}"
+  when: iot_thing_policies_json is defined
+
+- name: install boto3
+  pip:
+    name: boto3
+    state: present
+  become: yes
+  become_user: root
+  when: ansible_os_family == "Debian"
+
+- set_fact:
+    ggc_groups: {}
+
+# Groups are 1-1 with cores, so iterate over groups creating the group and core.
+- include_tasks: core.yml
+  with_items: "{{ greengrass_group_names }}"
+  loop_control:
+    loop_var: greengrass_group_name
+
+- name: Create our greengrass device things
+  include_tasks: device.yml
+  with_sequence: start=1 end={{ greengrass_device_count }}
+  loop_control:
+    loop_var: device_index
+  when: greengrass_device_count is defined

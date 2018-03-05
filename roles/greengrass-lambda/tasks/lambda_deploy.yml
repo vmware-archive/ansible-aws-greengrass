@@ -1,0 +1,103 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# This role deploys lambda functions for AWS execution.
+
+- name: List current roles
+  command: aws iam list-roles
+  register: iam_roles
+
+- name: set lambda role fact
+  set_fact:
+    lambda_role_arn: "{{ iam_roles.stdout | from_json | json_query(lambda_role_query)}}"
+  vars:
+    lambda_role_query: "Roles[?RoleName=='{{ lambda_role_name }}'].Arn | [0]"
+  when: iam_roles.changed and iam_roles.rc == 0
+
+- name: Verify staging bucket
+  command: aws s3 ls
+  register: s3_buckets
+
+- name: Create staging bucket
+  command: aws s3 mb s3://{{ staging_s3_bucket }}
+  when:
+    - s3_buckets.changed
+    - staging_s3_bucket not in s3_buckets.stdout and not skip_s3_uploads
+
+- name: List lambdas
+  command: aws lambda list-functions
+  register: lambda_functions
+
+- name: set lambda_functions json
+  set_fact:
+    lambda_functions_json: "{{ lambda_functions.stdout | from_json }}"
+  when: lambda_functions.changed
+
+- name: set lambda arn list to initial empty
+  set_fact:
+    lambda_version_arns: []
+
+- include_tasks: define_function.yml
+  with_items: "{{ lambdas }}"
+  loop_control:
+    loop_var: lambda
+
+- name: List function definitions
+  command: aws greengrass list-function-definitions
+  register: function_definitions
+  when: function_definition_id is undefined
+
+- name: obtain current function definition
+  set_fact:
+    function_definition_id: >-
+      {{ function_definitions.stdout | from_json | json_query(def_query) }}
+    function_definition_arn: >-
+      {{ function_definitions.stdout | from_json | json_query(arn_query) }}
+  vars:
+    def_query: "Definitions[0].Id"
+    arn_query: "Definitions[0].Arn"
+  when:
+    - function_definitions.changed
+
+# If there's not a fn definition, make one
+- name: Create function definition
+  command: aws greengrass create-function-definition
+    --name {{ function_definition_name | default(ansible_date_time.iso8601) }}
+  register: create_function_definition
+  when:
+    - function_definition_id is undefined or not function_definition_id
+
+- name: Extract function definition
+  set_fact:
+    function_definition_id: >-
+      {{ create_function_definition.stdout | from_json |
+      json_query(function_definition_id_query)}}"
+  vars:
+    function_definition_id_query: "Id"
+  when: create_function_definition.changed
+
+- name: Create a function definition and version
+  block:
+    - tempfile:
+        state: directory
+        suffix: fn_def
+      register: tmp_function
+    - name: Template out function config
+      template:
+        src: function_definition.json.j2
+        dest: "{{ tmp_function.path }}/function_definition.json"
+    - name: Create function definition version
+      command: aws greengrass create-function-definition-version
+        --function-definition-id {{ function_definition_id }}
+        --functions file://{{ tmp_function.path }}/function_definition.json
+      register: create_function_definition_version
+    - name: Extract function definition version
+      set_fact:
+        function_definition_version: >-
+          {{ create_function_definition_version.stdout | from_json |
+          json_query(version_query) }}
+      vars:
+        version_query: "Version"
+      when: create_function_definition_version.changed
+  when:
+    - lambdas_updated is defined and lambdas_updated == true

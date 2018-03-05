@@ -1,0 +1,76 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# Create the necessary bits for a Greengrass device to be represented
+
+- name: set device_name
+  set_fact:
+    device_name: "{{ greengrass_device_stub }}{{ device_index }}"
+  when: device_index is defined
+
+- name: Create a policy for the device thing
+  command: aws iot create-policy --policy-name "{{ device_name }}-policy"
+    --policy-document {{ greengrass_device_policy }}
+  register: iot_device_policy_create
+  when:
+    - iot_thing_policy_list is defined
+    - "device_name ~ '-policy' not in iot_thing_policy_list"
+
+- name: create the thing
+  block:
+    - command: aws iot create-thing --thing-name "{{ device_name }}"
+      register: iot_thing_create
+    - set_fact:
+        thing_arn: >-
+          {{ iot_thing_create.stdout | from_json | json_query('thingArn') }}
+    - command: aws iot create-keys-and-certificate --set-as-active
+      register: keys_and_certs
+    - set_fact:
+        certificate_pem: >-
+          {{ keys_and_certs.stdout |
+          from_json | json_query('certificatePem') }}
+    - set_fact:
+        certificate_key: >-
+          {{ keys_and_certs.stdout | from_json |
+          json_query('keyPair.PrivateKey') }}
+    - set_fact:
+        certificate_arn: >-
+          {{ keys_and_certs.stdout | from_json |
+          json_query('certificateArn') }}
+    - name: create temporary directory for thing config
+      tempfile:
+        state: directory
+        suffix: "{{ device_name }}"
+      register: device_temp
+    - name: download-root-ca
+      get_url:
+        url: "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem"
+        dest: "{{ device_temp.path }}/root.ca.pem"
+        checksum: "{{ root_ca_checksum }}"
+    - copy:
+        content: "{{ certificate_key }}"
+        dest: "{{ device_temp.path }}/{{ device_name }}.private.key"
+    - copy:
+        content: "{{ certificate_pem }}"
+        dest: "{{ device_temp.path }}/{{ device_name }}.cert.pem"
+    - archive:
+        path: "{{ device_temp.path }}/*"
+        dest: "{{ device_temp.path }}/{{ device_name }}-setup.tar.gz"
+    - name: upload-greengrass-config-s3
+      aws_s3:
+        bucket: "{{ greengrass_s3_bucket }}"
+        object: "{{ device_name }}-setup.tar.gz"
+        src: "{{ device_temp.path }}/{{ device_name }}-setup.tar.gz"
+        mode: put
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+      when: greengrass_s3_bucket is defined and not skip_s3_uploads
+    - command: aws iot attach-principal-policy
+        --policy-name '{{ device_name }}-policy'
+        --principal '{{ certificate_arn }}'
+    - command: aws iot attach-thing-principal
+        --thing-name '{{ device_name }}'
+        --principal '{{ certificate_arn }}'
+  when:
+    - iot_thing_list is defined
+    - device_name not in iot_thing_list

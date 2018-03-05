@@ -1,0 +1,72 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# Create a deployment of a set of greengrass components
+# Currently assumes AWS credentials are already set up and AWS CLI is present.
+
+- name: Display group to be deployed
+  debug: msg="Creating deployment for {{ greengrass_group_name }}"
+  when: greengrass_group_name is defined
+
+- name: set deployment type default
+  set_fact:
+    deployment_type: NewDeployment
+
+- name: debug deploy
+  debug: var=greengrass_deploy
+  when: greengrass_deploy is defined
+
+- name: set deployment type for redeployment if necessary
+  set_fact:
+    deployment_type: Redeployment
+  when:
+    - greengrass_group_name in greengrass_deploy
+    - greengrass_deploy[greengrass_group_name].redeploy is defined
+    - greengrass_deploy[greengrass_group_name].redeploy
+
+- name: set group ID
+  set_fact:
+    group_id: "{{ ggc_groups[greengrass_group_name].id }}"
+  when:
+    - greengrass_group_name in ggc_groups
+    - ggc_groups[greengrass_group_name].id is defined
+
+- name: set group version ID
+  set_fact:
+    group_version_id: "{{ ggc_groups[greengrass_group_name].groupVersionId }}"
+  when:
+    - greengrass_group_name in ggc_groups
+    - ggc_groups[greengrass_group_name].groupVersionId is defined
+
+- name: Create the deployment
+  command: aws greengrass create-deployment
+    --deployment-type {{ deployment_type }}
+    --group-id {{ group_id }}
+    --group-version-id {{ group_version_id }}
+  register: create_deployment
+  when:
+    - group_id is defined
+    - group_version_id is defined
+    - deployment_id is undefined
+    - greengrass_group_name in greengrass_deploy
+    - greengrass_deploy[greengrass_group_name].deploy is defined
+    - greengrass_deploy[greengrass_group_name].deploy
+
+- name: set create_deployment json
+  set_fact:
+    deployment_json: "{{ create_deployment.stdout | from_json }}"
+  when: create_deployment.changed
+
+- name: select out newly created deployment
+  set_fact:
+    deployment_id: "{{ deployment_json | json_query('DeploymentId') }}"
+  when:
+    - deployment_json is defined
+    - deployment_id is undefined
+
+- name: check status of create_deployment
+  command: aws greengrass get-deployment-status
+    --deployment-id {{ deployment_id }}
+    --group-id {{ group_id }}
+  register: deployment_status
+  when: deployment_id is defined

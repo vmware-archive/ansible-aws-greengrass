@@ -1,0 +1,73 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# This role upload a particular lambda function to AWS.
+
+- name: Show lambda function
+  debug: msg="Defining function '{{ lambda.name }}'"
+
+- name: Extract lambda function arn
+  set_fact:
+    lambda_arn: "{{ lambda_functions_json | json_query(lambda_arn_query)}}"
+  vars:
+    lambda_arn_query: "Functions[?FunctionName=='{{ lambda.name }}'].FunctionArn | [0]"
+  when: lambda_functions.changed and lambda_functions.rc == 0
+
+- name: Upload lambda source to S3 bucket
+  command: aws s3 cp {{ lambda.zip }} s3://{{ staging_s3_bucket }} --quiet
+  when: not skip_s3_uploads
+
+- name: Create the lambda
+  command: aws lambda create-function --region {{ aws_region }}
+    --function-name {{ lambda.name }}
+    --description "{{ lambda.description }}"
+    --code S3Bucket={{ staging_s3_bucket }},S3Key={{ lambda.name }}.zip
+    --role {{ lambda_role_arn }}
+    --handler {{ lambda.handler }}
+    --runtime {{ lambda.runtime }}
+  register: lambda_create
+  when: lambda_arn is defined and not lambda_arn
+
+- name: List lambda versions
+  command: >
+    aws lambda list-versions-by-function
+    --function-name {{ lambda.name }}
+  register: lambda_versions
+
+- name: Extract lambda version arn that matches expected version
+  set_fact:
+    lambda_version_arn: "{{ lambda_versions.stdout | from_json | json_query(version_query)}}"
+  vars:
+    version_query: "Versions[?Version=='{{ lambda.version }}'].FunctionArn | [0]"
+  when: lambda_versions.changed and lambda_versions.rc == 0
+
+- name: Update lambda code and publish a new version if not found
+  command: aws lambda update-function-code
+    --function-name {{ lambda.name }}
+    --s3-bucket {{ staging_s3_bucket }}
+    --s3-key {{ lambda.name }}.zip
+    --publish
+  register: update_code
+  when: lambda_version_arn is defined and not lambda_version_arn
+
+- name: set update_code json
+  set_fact:
+    update_code_json: "{{ update_code.stdout | from_json }}"
+  when: update_code.changed
+
+- name: Extract lambda function version arn
+  set_fact:
+    lambda_version_arn: "{{ update_code_json | json_query(version_arn_query)}}"
+  vars:
+    version_arn_query: "FunctionArn"
+  when: update_code.changed
+
+- name: Record lambda version arn for group
+  set_fact:
+    lambda_version_arns: "{{ lambda_version_arns }} + [ '{{ lambda_version_arn }}' ]"
+  when: lambda_version_arn is defined
+
+- name: Record that there is a new version arn, since code changed
+  set_fact:
+    lambdas_updated: true
+  when: update_code.changed

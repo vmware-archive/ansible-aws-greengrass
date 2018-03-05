@@ -1,0 +1,16 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# file: iot.yml - tasks to set up IoT components
+- hosts: greengrass-init
+  tags: greengrass
+  roles:
+    - { role: greengrass-init, tags: ['greengrass-init'] }
+    - { role: greengrass-lambda, tags: ['greengrass-lambda'] }
+    - { role: greengrass-deploy, tags: ['greengrass-deploy'] }
+
+- hosts: greengrass-core
+  become: yes
+  tags: greengrass,greengrass-core
+  roles:
+    - { role: greengrass-core, when: ansible_os_family == 'Debian' }

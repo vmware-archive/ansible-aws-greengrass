@@ -1,0 +1,23 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+greengrass_version: 1.3.0
+
+# Define this to download from the web rather than S3
+#greengrass_package_url: "http://somewhere/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz"
+
+greengrass_checksum: sha256:e157c98967801d22935189f6394ed4a22dc9c9ca7bd521e601f21a3ec014d7eb
+
+root_ca_checksum: sha256:eec26a7b9d62e3f674bd7befede9c878d484707a85c0702a16f54cd0704544ed
+
+# You might define an S3 bucket to contain greengrass files.
+greengrass_s3_bucket: s3-bucket-to-draw-files-from
+
+# You'll need an ID for the core to be installed.  This should probably be set
+# as a host var if you want to deploy multiple cores.
+greengrass_core_id: name-of-core
+
+greengrass_core_setup: "{{ greengrass_core_id }}-setup.tar.gz"
+
+# Define this to download from the web rather than S3
+#greengrass_core_setup_url: http://localhost/{{ greengrass_core_setup }}

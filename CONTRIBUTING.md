@@ -8,7 +8,13 @@ questions about the CLA process, please refer to our [FAQ](https://cla.vmware.co
 
 ## Community
 
+For now, the best point of contact is through the Github project.  If you have
+questions, comments, or feedback, feel free to open a Github issue to get the
+conversation started.
+
 ## Getting Started
+
+See the README for detailed getting started instructions.
 
 ## Contribution Flow
 
@@ -68,6 +74,9 @@ notification when you git push.
 
 ### Code Style
 
+We follow Ansible standard coding style.  We prefer 80-column width source
+files.
+
 ### Formatting Commit Messages
 
 We follow the conventions on [How to Write a Git Commit Message](http://chris.beams.io/posts/git-commit/).
@@ -81,3 +90,6 @@ and commits.
 When opening a new issue, try to roughly follow the commit message format conventions above.
 
 ## Repository Structure
+
+This repo is structured along the lines of the Ansible recommended
+[directory layout](http://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html#directory-layout).

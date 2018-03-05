@@ -1,0 +1,14 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+[greengrass-core]
+localhost        ansible_connection=local
+
+[greengrass-init]
+localhost        ansible_connection=local
+
+[dev]
+localhost        ansible_connection=local
+
+[dev:vars]
+name="VMware User"
+email=developer@vmware.com

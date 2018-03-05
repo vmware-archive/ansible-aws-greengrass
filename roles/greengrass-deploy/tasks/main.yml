@@ -1,0 +1,10 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# Create a deployment of a set of greengrass components
+# Currently assumes AWS credentials are already set up and AWS CLI is present.
+
+- include_tasks: deploy.yml
+  with_items: "{{ greengrass_group_names }}"
+  loop_control:
+    loop_var: greengrass_group_name
