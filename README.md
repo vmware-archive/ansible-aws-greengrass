@@ -29,25 +29,29 @@ operation
         1. `sudo pip install ansible markupsafe`
 4. Clone this repository and cd into it
 5. Configure hosts (check values in the inventory file, e.g. ```cp inventory.sample inventory``` and edit)
-6. Set password and other security (optional)
+6. Copy `extra_vars.yml.sample` to `extra_vars.yml`, and customize as necessary.
+7. Set password and other security (optional)
    ```
    echo "$VAULT_PASSWORD" > vault_password
+   # For example, AWS keys...
+   ansible-vault encrypt_string --vault-id vmware@vault_password 'access-key' --name aws_access_key
+   ansible-vault encrypt_string --vault-id vmware@vault_password 'secret-key' --name aws_secret_key
+   # and paste the output into extra_vars
    ```
    Also ensure you have credentials or keys for ssh to all target servers.
-   NOTE: You can also manually enter the vault password during execution with ```--ask-vault-pass```
-8. Copy `extra_vars.yml.sample` to `extra_vars.yml`, and customize as necessary.
-9. You may wish to first run the `awscli` role targeting your development box
+   NOTE: You can also manually enter the vault password during execution with ```--vault-id vmware@prompt```
+8. You may wish to first run the `awscli` role targeting your development box
 (e.g. localhost) and perform later steps from there.
    ```
-   ansible-playbook site.yml -i inventory --vault-password-file vault_password --extra-vars "@extra_vars.yml" -kK --tags dev
+   ansible-playbook site.yml -i inventory --vault-id vmware@vault_password --extra-vars "@extra_vars.yml" -kK --tags dev
    ```
-10. Run site playbook:
+9. Run site playbook:
     ```
-    ansible-playbook site.yml -i inventory --vault-password-file  vault_password --extra-vars "@extra_vars.yml" -kK
+    ansible-playbook site.yml -i inventory --vault-id vmware@vault_password --extra-vars "@extra_vars.yml" -kK
     ```
     or
     ```
-    ansible-playbook site.yml -i inventory --ask-vault-pass --extra-vars "@extra_vars.yml" -kK
+    ansible-playbook site.yml -i inventory --vault-id vmware@prompt --extra-vars "@extra_vars.yml" -kK
     ```
 
 Running on OSX for development
