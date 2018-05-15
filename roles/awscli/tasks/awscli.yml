@@ -44,13 +44,20 @@
     - not ansible_check_mode
 
 # Installing with --user for OSX.  OSX system Python is a real mess.
-- name: install-aws-cli (user)
+- name: install-aws-cli
   pip:
     name: awscli
     state: latest
     extra_args: --user
   when:
-    - ansible_os_family == "Debian"
+    - ansible_os_family == "Darwin"
+    - not ansible_check_mode
+
+- name: Install pybin
+  pip:
+    name: pybin
+  when:
+    - ansible_os_family == "Darwin"
     - not ansible_check_mode
 
 - name: Add aws cmd line to path
