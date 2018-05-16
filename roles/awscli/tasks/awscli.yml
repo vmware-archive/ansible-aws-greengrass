@@ -48,7 +48,7 @@
   pip:
     name: awscli
     state: latest
-    extra_args: --user
+  become: yes
   when:
     - ansible_os_family == "Darwin"
     - not ansible_check_mode
