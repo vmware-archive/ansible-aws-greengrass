@@ -33,6 +33,7 @@ RUN echo fluxbox >> /vnc/vnc.sh
 RUN chmod +x -v /vnc/*.sh
 EXPOSE 5920
 
+RUN apt-get install python-jmespath
 VOLUME /code
 ADD . /code
 WORKDIR /code
