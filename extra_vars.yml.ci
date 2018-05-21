@@ -19,7 +19,7 @@ aws_secret_key: 'AWS_SECRET_KEY'
 
 # This S3 bucket is used to store credentials, lambda code, etc.
 # The AWS credentials available to
-greengrass_s3_bucket: greengrass_items
+greengrass_s3_bucket: greengrass-items
 
 # Greengrass groups to create.  A matching core will be created for each group,
 # and deployed to a target host, if a host in the inventory has a matching Core

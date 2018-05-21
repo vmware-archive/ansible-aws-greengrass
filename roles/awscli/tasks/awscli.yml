@@ -9,6 +9,7 @@
     - groff
     - sudo
     - unzip
+    - python-jmespath
   when:
     - ansible_os_family == "Debian"
     - not ansible_check_mode
