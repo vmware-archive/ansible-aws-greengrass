@@ -5,9 +5,6 @@ RUN apt-get update -qq && apt-get install -y x11vnc xvfb fluxbox python-apt
 RUN mkdir ~/.vnc
 # Setup a VNC password
 RUN x11vnc -storepasswd 1234 /etc/x11vnc.pass
-VOLUME /code
-ADD . /code
-WORKDIR /code
 
 RUN echo "Install noVNC - HTML5 based VNC viewer"
 RUN mkdir -p /novnc/utils/websockify
@@ -35,6 +32,10 @@ RUN echo "xterm &" >> /vnc/vnc.sh
 RUN echo fluxbox >> /vnc/vnc.sh
 RUN chmod +x -v /vnc/*.sh
 EXPOSE 5920
+
+VOLUME /code
+ADD . /code
+WORKDIR /code
 
 # These arguments assume the local inventory and extra_vars is already created.
 CMD ["site.yml", "-i", "inventory", "--extra-vars", "@extra_vars.yml"]
