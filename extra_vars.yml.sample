@@ -65,7 +65,7 @@ lambdas:
 # redeploy.  A group may have neither set if it has not changed.
 greengrass_deploy:
   mygroup-1:
-    redeploy: true
+    deploy: true
     redeploy: false
   mygroup-2:
     redeploy: false
