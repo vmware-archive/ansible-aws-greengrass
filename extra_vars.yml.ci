@@ -1,0 +1,61 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# awscli setup
+# The awscli role is used to set up AWS CLI to prepare for greengrass setup.
+# This can be skipped if you install and configure AWS CLI manually.
+# The developer user account is used to configure AWS credentials in the home
+# directory.
+developer_user: root
+
+# AWS credentials are used by devtools to set up the AWS CLI, and these same
+# credentials are also used within the Greengrass role.  These credentials will
+# need to be able to write to S3, IAM, IOT and Greengrass.  You can pre-create
+# roles and policies as necessary if you wish to use less privileged keys here.
+aws_access_key: 'AWS_ACCESS_KEY'
+aws_secret_key: 'AWS_SECRET_KEY'
+
+# Greengrass setup
+
+# This S3 bucket is used to store credentials, lambda code, etc.
+# The AWS credentials available to
+greengrass_s3_bucket: greengrass_items
+
+# Greengrass groups to create.  A matching core will be created for each group,
+# and deployed to a target host, if a host in the inventory has a matching Core
+# ID.  For example, a host with a host variable
+# greengrass_core_id='mygroup-1_Core'
+# would receive a deployment of the first group in this list below.
+greengrass_group_names:
+  - cigroup1
+
+# The role will create devices of the form {greengrass_device_stub}N, where N
+# is between 1 and greengrass_device_count.
+# These can be left undefined if no devices should be mass-created this way.
+greengrass_device_stub: ci-device
+greengrass_device_count: 2
+
+# You might wish to set this to true if you have another plan to distribute
+# certificates and binaries, or for speedier testing.
+skip_s3_uploads: false
+
+# Define the lambdas that should be deployed to a Greengrass Core.
+# Every time a version of a function is increased, that will create a new
+# Greengrass group version.
+# lambdas:
+#   - name: some_function_name
+#     description: Describe the function
+#     zip: /path/to/source/of/function.zip
+#     handler: module.function_handler
+#     runtime: python2.7
+#     version: 1
+#     id: function_id1
+
+
+# This drives deployments of groups/cores, since it's not always clear when a
+# new deployment should occur.  It only makes sense to set either deploy or
+# redeploy.  A group may have neither set if it has not changed.
+greengrass_deploy:
+  cigroup1:
+    deploy: true
+    redeploy: false
