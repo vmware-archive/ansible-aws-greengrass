@@ -3,5 +3,5 @@
 ---
 # file: site.yml
 
-- import_playbook: iot.yml
 - import_playbook: dev.yml
+- import_playbook: iot.yml
