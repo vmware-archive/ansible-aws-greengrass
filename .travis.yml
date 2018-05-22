@@ -14,5 +14,9 @@ before_install:
 
 script:
   - >
+    ansible-playbook site.yml -i inventory --extra-vars "@extra_vars.yml"
+    --check --skip-tag greengrass-core
+  - >
+    [ $AWS_ACCESS_KEY ] &&
     docker run -it --rm vmware/ansible-aws-greengrass site.yml
     -i inventory -v --extra-vars "@extra_vars.yml"
