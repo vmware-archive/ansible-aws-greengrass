@@ -11,6 +11,7 @@ before_install:
   - sed -ri "s/AWS_ACCESS_KEY/$AWS_ACCESS_KEY/" extra_vars.yml
   - sed -ri "s/AWS_SECRET_KEY/$AWS_SECRET_KEY/" extra_vars.yml
   - docker build -t vmware/ansible-aws-greengrass .
+  - pip install ansible
 
 script:
   - >
