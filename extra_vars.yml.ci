@@ -63,3 +63,6 @@ greengrass_deploy:
 # This is set here for CI, where we are only deploying one core.
 # Normally this is set as a host variable.
 greengrass_core_id: cigroup1_Core
+
+# Don't start greengrass core from CI; doesn't work in Docker builds.
+no_greengrass_start: true
