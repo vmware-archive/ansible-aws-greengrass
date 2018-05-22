@@ -1,5 +1,7 @@
 # Ansible AWS Greengrass
 
+[![Build Status](https://travis-ci.org/vmware/ansible-aws-greengrass.svg?branch=master)](https://travis-ci.org/vmware/ansible-aws-greengrass)
+
 This is an Ansible repo to set up the server side features for an AWS
 Greengrass project and deploy the IoT portions that would run in a data
 center.  
@@ -26,7 +28,7 @@ operation
     * Quick steps for ubuntu 14.04, as an example:
         1. `sudo apt-get install -y python-pip python-dev libssl-dev sshpass`
         1. `sudo pip install --upgrade setuptools`
-        1. `sudo pip install ansible markupsafe`
+        1. `sudo pip install ansible markupsafe jmespath`
 4. Clone this repository and cd into it
 5. Configure hosts (check values in the inventory file, e.g. ```cp inventory.sample inventory``` and edit)
 6. Copy `extra_vars.yml.sample` to `extra_vars.yml`, and customize as necessary.
@@ -98,6 +100,8 @@ Greengrass permissions, and most likely with S3 read/write
 at some URL and supply that by setting the appropriate variable.
 * AWS Greengrass Core role currently only supports Ubuntu; you'll need an
 Ubuntu VM or machine, or be prepared to port.
+* This role uses the json_query filter which requires jmespath on the local
+machine.
 
 ### Build & Run
 
