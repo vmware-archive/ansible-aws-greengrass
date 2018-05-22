@@ -2,23 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 ---
 # This role configures a set of developer tools for our environment.
-- name: Ensure groff is installed.
-  apt: name=groff state=installed
+- name: Ensure underlying requirements are installed.
+  package: name={{ item }} state=present
   become_user: root
-  when:
-    - ansible_os_family == "Debian"
-    - not ansible_check_mode
-
-- name: Ensure sudo is installed.
-  apt: name=sudo state=installed
-  become_user: root
-  when:
-    - ansible_os_family == "Debian"
-    - not ansible_check_mode
-
-- name: Ensure unzip is installed.
-  apt: name=unzip state=installed
-  become_user: root
+  with_items:
+    - groff
+    - sudo
+    - unzip
+    - python-jmespath
   when:
     - ansible_os_family == "Debian"
     - not ansible_check_mode

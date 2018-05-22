@@ -1,0 +1,18 @@
+language: python
+
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - cp inventory.local inventory
+  - cp extra_vars.yml.ci extra_vars.yml
+  - sed -ri "s/AWS_ACCESS_KEY/$AWS_ACCESS_KEY/" extra_vars.yml
+  - sed -ri "s/AWS_SECRET_KEY/$AWS_SECRET_KEY/" extra_vars.yml
+  - docker build -t vmware/ansible-aws-greengrass .
+
+script:
+  - >
+    docker run -it --rm vmware/ansible-aws-greengrass site.yml
+    -i inventory -v --extra-vars "@extra_vars.yml"
