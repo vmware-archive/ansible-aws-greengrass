@@ -5,6 +5,10 @@ sudo: required
 services:
   - docker
 
+addons:
+  apt:
+    update: true
+
 before_install:
   - cp inventory.local inventory
   - cp extra_vars.yml.ci extra_vars.yml
@@ -19,7 +23,7 @@ script:
     --check --skip-tag greengrass-core
   - >
     [ $AWS_ACCESS_KEY ] && ansible-playbook dev.yml -i inventory
-    --extra-vars "@extra_vars.yml"
+    --extra-vars "@extra_vars.yml" -vvvv
 #  - cd roles/greengrass-init/tests
 #  - [ $AWS_ACCESS_KEY ] && ansible-playbook test.yml -i inventory
   - >
