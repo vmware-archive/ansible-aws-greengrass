@@ -37,6 +37,9 @@
         certificate_arn: >-
           {{ keys_and_certs.stdout | from_json |
           json_query('certificateArn') }}
+    - set_fact:
+        certificate_id: >-
+          {{ keys_and_certs.stdout | from_json | json_query('certificateId') }}
     - name: create temporary directory for thing config
       tempfile:
         state: directory
@@ -57,13 +60,8 @@
         path: "{{ device_temp.path }}/*"
         dest: "{{ device_temp.path }}/{{ device_name }}-setup.tar.gz"
     - name: upload-greengrass-config-s3
-      aws_s3:
-        bucket: "{{ greengrass_s3_bucket }}"
-        object: "{{ device_name }}-setup.tar.gz"
-        src: "{{ device_temp.path }}/{{ device_name }}-setup.tar.gz"
-        mode: put
-        aws_access_key: "{{ aws_access_key }}"
-        aws_secret_key: "{{ aws_secret_key }}"
+      command: aws s3 cp {{ device_temp.path }}/{{ device_name }}-setup.tar.gz
+        s3://{{ greengrass_s3_bucket }}/
       when: greengrass_s3_bucket is defined and not skip_s3_uploads
     - command: aws iot attach-principal-policy
         --policy-name '{{ device_name }}-policy'
@@ -71,6 +69,21 @@
     - command: aws iot attach-thing-principal
         --thing-name '{{ device_name }}'
         --principal '{{ certificate_arn }}'
+  rescue:
+    - debug:
+        msg: "Failed to create {{ device_name }}! Destroying what was created."
+    - command: aws iot delete-thing --thing-name "{{ device_name }}"
+      ignore_errors: yes
+    - command: aws iot update-certificate
+        --certificate-id "{{ certificate_id }}" --new-status INACTIVE
+      ignore_errors: yes
+    - command: aws iot delete-certificate
+        --certificate-id "{{ certificate_id }}"
+      ignore_errors: yes
+    - command: aws s3 rm
+        s3://{{ greengrass_s3_bucket }}/{{ device_temp.path }}/{{ device_name }}-setup.tar.gz
+      ignore_errors: yes
+    - fail: msg="Failed to create device {{ device_name }}!"
   when:
     - iot_thing_list is defined
     - device_name not in iot_thing_list
