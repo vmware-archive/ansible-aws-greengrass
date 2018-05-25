@@ -23,6 +23,7 @@ before_install:
   - sed -ri "s:AWS_SECRET_KEY:$AWS_SECRET_KEY:" extra_vars.yml
   - pip install ansible
   - ansible-playbook dev.yml -i inventory --extra-vars "@extra_vars.yml"
+  - cat ~/.aws/credentials
 jobs:
   include:
     - stage: lint
@@ -31,6 +32,8 @@ jobs:
         --check --skip-tag greengrass-core
     - stage: test_roles
       script:
+        - cat ~/.aws/credentials
+        - ansible-playbook dev.yml -i inventory --extra-vars "@extra_vars.yml"
         - cat ~/.aws/credentials
         - cd roles/greengrass-init/tests
         - ansible-playbook test.yml -i inventory
