@@ -1,3 +1,10 @@
+stages:
+  - lint
+  - name: test_roles
+    if: env(AWS_SECRET_KEY) IS present
+  - name: test_docker
+    if: env(AWS_SECRET_KEY) IS present
+
 language: python
 
 sudo: required
@@ -16,17 +23,18 @@ before_install:
   - sed -ri "s/AWS_SECRET_KEY/$AWS_SECRET_KEY/" extra_vars.yml
   - pip install ansible
   - docker build -t vmware/ansible-aws-greengrass .
-
-script:
-  - >
-    ansible-playbook site.yml -i inventory --extra-vars "@extra_vars.yml"
-    --check --skip-tag greengrass-core
-  - >
-    [ $AWS_ACCESS_KEY ] && ansible-playbook dev.yml -i inventory
-    --extra-vars "@extra_vars.yml" -vvvv
-#  - cd roles/greengrass-init/tests
-#  - [ $AWS_ACCESS_KEY ] && ansible-playbook test.yml -i inventory
-  - >
-    [ $AWS_ACCESS_KEY ] &&
-    docker run -it --rm vmware/ansible-aws-greengrass site.yml
-    -i inventory -v --extra-vars "@extra_vars.yml"
+  - ansible-playbook dev.yml -i inventory --extra-vars "@extra_vars.yml"
+jobs:
+  include:
+    - stage: lint
+      script: >
+        ansible-playbook site.yml -i inventory --extra-vars "@extra_vars.yml"
+        --check --skip-tag greengrass-core
+    - stage: test_roles
+      script:
+        - cd roles/greengrass-init/tests
+        - ansible-playbook test.yml -i inventory
+    - stage: test_docker
+      script: >
+        docker run -it --rm vmware/ansible-aws-greengrass site.yml
+        -i inventory -v --extra-vars "@extra_vars.yml"
