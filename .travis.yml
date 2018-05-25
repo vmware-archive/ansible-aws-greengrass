@@ -34,9 +34,9 @@ jobs:
       script:
         - cat ~/.aws/credentials || echo "NONE"
         - ansible-playbook dev.yml -i inventory --extra-vars "@extra_vars.yml"
-        - cat ~/.aws/credentials || echo "NONE"
+        - sudo cat ~/.aws/credentials || echo "NONE"
         - cd roles/greengrass-init/tests
-        - ansible-playbook test.yml -i inventory
+        - sudo ansible-playbook test.yml -i inventory
     - stage: test_docker
       script:
         - docker build -t vmware/ansible-aws-greengrass .
