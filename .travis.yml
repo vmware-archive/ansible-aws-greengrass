@@ -21,8 +21,6 @@ before_install:
   - cp extra_vars.yml.ci extra_vars.yml
   - sed -ri "s:AWS_ACCESS_KEY:$AWS_ACCESS_KEY:" extra_vars.yml
   - sed -ri "s:AWS_SECRET_KEY:$AWS_SECRET_KEY:" extra_vars.yml
-  - pip install ansible
-  - ansible-playbook dev.yml -i inventory --extra-vars "@extra_vars.yml" -vv
 jobs:
   include:
     - stage: lint
