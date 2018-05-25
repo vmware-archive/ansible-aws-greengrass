@@ -31,7 +31,7 @@ jobs:
       script:
         - ansible-playbook dev.yml -i inventory --extra-vars "@extra_vars.yml"
         - cd roles/greengrass-init/tests
-        - ansible-playbook test.yml -i inventory
+        - ansible-playbook test.yml -i inventory -vv
     - stage: test_docker
       script:
         - docker build -t vmware/ansible-aws-greengrass .

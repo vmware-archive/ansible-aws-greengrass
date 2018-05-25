@@ -23,6 +23,9 @@
   register: service_role
   failed_when: service_role.changed and service_role.rc != 0 and service_role.rc != 255
 
+- name: Debug role
+  debug: var=service_role
+
 - name: Create service role
   command: aws iam create-role --role-name Greengrass-Service-Role --assume-role-policy-document {{ greengrass_service_role }}
   register: iam_service_role_create
