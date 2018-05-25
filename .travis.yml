@@ -1,9 +1,9 @@
 stages:
   - lint
   - name: test_roles
-    if: env(AWS_SECRET_KEY) IS present
+    if: type IN (push, cron)
   - name: test_docker
-    if: env(AWS_SECRET_KEY) IS present
+    if: type IN (push, cron)
 
 language: python
 
