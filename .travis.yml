@@ -23,7 +23,6 @@ before_install:
   - sed -ri "s:AWS_SECRET_KEY:$AWS_SECRET_KEY:" extra_vars.yml
   - pip install ansible
   - ansible-playbook dev.yml -i inventory --extra-vars "@extra_vars.yml" -vv
-  - cat ~/.aws/credentials || echo "NONE"
 jobs:
   include:
     - stage: lint
@@ -32,11 +31,9 @@ jobs:
         --check --skip-tag greengrass-core
     - stage: test_roles
       script:
-        - cat ~/.aws/credentials || echo "NONE"
         - ansible-playbook dev.yml -i inventory --extra-vars "@extra_vars.yml"
-        - sudo cat ~/.aws/credentials || echo "NONE"
         - cd roles/greengrass-init/tests
-        - sudo ansible-playbook test.yml -i inventory
+        - ansible-playbook test.yml -i inventory
     - stage: test_docker
       script:
         - docker build -t vmware/ansible-aws-greengrass .
