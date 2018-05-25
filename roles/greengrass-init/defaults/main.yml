@@ -1,0 +1,5 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# By default, we are following the convention of AWS Console, [groupname]_Core
+core_name_suffix: "_Core"

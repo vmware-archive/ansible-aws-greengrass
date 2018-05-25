@@ -29,7 +29,9 @@
 - name: Create service role
   command: aws iam create-role --role-name Greengrass-Service-Role --assume-role-policy-document {{ greengrass_service_role }}
   register: iam_service_role_create
-  when: service_role.changed and service_role.rc == 255
+  when:
+    - service_role.changed and service_role.rc == 255
+    - service_role.stderr is search("404")
 
 - name: set service role fact
   set_fact:
