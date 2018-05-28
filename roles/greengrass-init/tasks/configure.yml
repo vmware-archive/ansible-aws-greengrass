@@ -57,7 +57,7 @@
   when: service_role_arn is defined
 
 - name: List greengrass groups
-  command: aws greengrass list-groups
+  command: aws greengrass list-groups --no-verify-ssl
   register: greengrass_groups
 
 - name: set greengrass_groups json
