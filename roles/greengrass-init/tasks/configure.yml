@@ -4,6 +4,8 @@
 # This role sets up the AWS configuration for Greengrass to enable deploy.
 # Currently assumes AWS credentials are already set up and AWS CLI is present.
 
+- set_fact: aws_args="{{ lookup('env','AWS_ARGS') }}"
+
 - import_tasks: lambda.yml
   tags: greengrass-lambda
 
@@ -57,7 +59,7 @@
   when: service_role_arn is defined
 
 - name: List greengrass groups
-  command: aws greengrass list-groups --no-verify-ssl
+  command: aws {{ aws_args }} greengrass list-groups
   register: greengrass_groups
 
 - name: set greengrass_groups json
