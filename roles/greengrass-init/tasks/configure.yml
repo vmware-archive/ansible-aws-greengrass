@@ -21,7 +21,7 @@
     iot_host_query: "endpointAddress"
 
 - name: Get service role
-  command: {{ aws }} greengrass get-service-role-for-account
+  command: "{{ aws }} greengrass get-service-role-for-account"
   register: service_role
   failed_when: service_role.changed and service_role.rc != 0 and service_role.rc != 255
 
@@ -29,7 +29,7 @@
   debug: var=service_role
 
 - name: Create service role
-  command: {{ aws }} iam create-role --role-name Greengrass-Service-Role --assume-role-policy-document {{ greengrass_service_role }}
+  command: "{{ aws }} iam create-role --role-name Greengrass-Service-Role --assume-role-policy-document {{ greengrass_service_role }}"
   register: iam_service_role_create
   when:
     - service_role.changed and service_role.rc == 255
@@ -59,7 +59,7 @@
   when: service_role_arn is defined
 
 - name: List greengrass groups
-  command: {{ aws }} greengrass list-groups
+  command: "{{ aws }} greengrass list-groups"
   register: greengrass_groups
 
 - name: set greengrass_groups json
@@ -76,7 +76,7 @@
   debug: var=greengrass_groups_json
 
 - name: List greengrass cores
-  command: {{ aws }} greengrass list-core-definitions
+  command: "{{ aws }} greengrass list-core-definitions"
   register: greengrass_cores
 
 - name: set greengrass_cores json
@@ -90,7 +90,7 @@
   when: greengrass_cores_json is defined
 
 - name: List iot things
-  command: {{ aws }} iot list-things
+  command: "{{ aws }} iot list-things"
   register: iot_things
 
 - name: set iot_things json
