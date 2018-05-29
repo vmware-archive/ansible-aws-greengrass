@@ -25,7 +25,7 @@
     - set_fact:
         thing_arn: >-
           {{ iot_thing_create.stdout | from_json | json_query('thingArn') }}
-    - command:"{{ aws }} iot create-keys-and-certificate --set-as-active"
+    - command: "{{ aws }} iot create-keys-and-certificate --set-as-active"
       register: keys_and_certs
     - set_fact:
         certificate_pem: >-
