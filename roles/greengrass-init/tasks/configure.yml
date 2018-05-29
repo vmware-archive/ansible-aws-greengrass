@@ -29,15 +29,18 @@
   debug: var=service_role
 
 - name: Create service role
-  command: "{{ aws }} iam create-role --role-name Greengrass-Service-Role --assume-role-policy-document {{ greengrass_service_role }}"
+  command: >
+    {{ aws }} iam create-role --role-name Greengrass-Service-Role
+    --assume-role-policy-document {{ greengrass_service_role }}
   register: iam_service_role_create
   when:
     - service_role.changed and service_role.rc == 255
-    - service_role.stderr is search("404")
 
 - name: set service role fact
   set_fact:
-    service_role_arn: "{{ iam_service_role_create.stdout | from_json | json_query(role_arn_query)}}"
+    service_role_arn: >
+      {{ iam_service_role_create.stdout | from_json |
+      json_query(role_arn_query)}}
   when: iam_service_role_create.changed
   vars:
     role_arn_query: "Role.Arn"
