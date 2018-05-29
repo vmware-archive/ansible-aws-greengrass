@@ -154,7 +154,8 @@
         msg: "Failed to create {{ core_name }}! Destroying what was created."
     - command: "{{ aws }} iot delete-thing --thing-name {{ core_name }}"
       ignore_errors: yes
-    - command: "{{ aws }} iot update-certificate"
+    - command: >
+        {{ aws }} iot update-certificate
         --certificate-id "{{ core_certificate_id }}" --new-status INACTIVE
       ignore_errors: yes
     - command: >
