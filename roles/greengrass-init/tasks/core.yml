@@ -58,7 +58,8 @@
     core_name: "{{ greengrass_group_name }}_Core"
 
 - name: Create a policy for core
-  command: {{ aws }} iot create-policy
+  command: >
+    {{ aws }} iot create-policy
     --policy-name '{{ core_name }}-policy'
     --policy-document {{ greengrass_core_policy }}
   register: iot_core_policy_create
@@ -136,13 +137,16 @@
         path: "{{ core_temp.path }}/c*/*"
         dest: "{{ core_temp.path }}/{{ core_name }}-setup.tar.gz"
     - name: upload-greengrass-config-s3
-      command: {{ aws }} s3 cp {{ core_temp.path }}/{{ core_name }}-setup.tar.gz
+      command: >
+        {{ aws }} s3 cp {{ core_temp.path }}/{{ core_name }}-setup.tar.gz
         s3://{{ greengrass_s3_bucket }}/
       when: greengrass_s3_bucket is defined and not skip_s3_uploads
-    - command: {{ aws }} iot attach-principal-policy
+    - command: >
+        {{ aws }} iot attach-principal-policy
         --policy-name '{{ core_name }}-policy'
         --principal '{{ core_certificate_arn }}'
-    - command: {{ aws }} iot attach-thing-principal
+    - command: >
+        {{ aws }} iot attach-thing-principal
         --thing-name '{{ core_name }}'
         --principal '{{ core_certificate_arn }}'
   rescue:
@@ -153,7 +157,8 @@
     - command: "{{ aws }} iot update-certificate"
         --certificate-id "{{ core_certificate_id }}" --new-status INACTIVE
       ignore_errors: yes
-    - command: {{ aws }} iot delete-certificate
+    - command: >
+        {{ aws }} iot delete-certificate
         --certificate-id "{{ core_certificate_id }}"
       ignore_errors: yes
     - command: >
@@ -211,7 +216,8 @@
         src: core_definition.json.j2
         dest: "{{ tmp_core.path }}/core_definition.json"
     - name: Create core definition version
-      command: {{ aws }} greengrass create-core-definition-version
+      command: >
+        {{ aws }} greengrass create-core-definition-version
         --core-definition-id {{ core_id }}
         --cores file://{{ tmp_core.path }}/core_definition.json
       register: create_core_definition_version
@@ -226,7 +232,8 @@
   when: create_core_definition_version.changed
 
 - name: List group versions
-  command: {{ aws }} greengrass list-group-versions
+  command: >
+    {{ aws }} greengrass list-group-versions
     --group-id {{ greengrass_group_id }}
   register: group_versions
   when:
@@ -250,7 +257,8 @@
 - name: Create a group version
   block:
     - name: Create core definition version
-      command: {{ aws }} greengrass create-group-version
+      command: >
+        {{ aws }} greengrass create-group-version
         --group-id {{ greengrass_group_id }}
         --core-definition-version-arn {{ core_definition_version_arn }}
       register: create_group_version
