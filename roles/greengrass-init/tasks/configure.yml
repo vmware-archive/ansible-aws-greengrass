@@ -4,13 +4,13 @@
 # This role sets up the AWS configuration for Greengrass to enable deploy.
 # Currently assumes AWS credentials are already set up and AWS CLI is present.
 
-- set_fact: aws_args="{{ lookup('env','AWS_ARGS') }}"
+- set_fact: aws="aws {{ lookup('env','AWS_ARGS') }}"
 
 - import_tasks: lambda.yml
   tags: greengrass-lambda
 
 - name: Get IoT host
-  command: aws {{ aws_args }} iot describe-endpoint
+  command: {{ aws }} iot describe-endpoint
   register: describe_endpoint
 
 - name: set IoT host fact
@@ -21,7 +21,7 @@
     iot_host_query: "endpointAddress"
 
 - name: Get service role
-  command: aws {{ aws_args }} greengrass get-service-role-for-account
+  command: {{ aws }} greengrass get-service-role-for-account
   register: service_role
   failed_when: service_role.changed and service_role.rc != 0 and service_role.rc != 255
 
@@ -29,7 +29,7 @@
   debug: var=service_role
 
 - name: Create service role
-  command: aws {{ aws_args }} iam create-role --role-name Greengrass-Service-Role --assume-role-policy-document {{ greengrass_service_role }}
+  command: {{ aws }} iam create-role --role-name Greengrass-Service-Role --assume-role-policy-document {{ greengrass_service_role }}
   register: iam_service_role_create
   when:
     - service_role.changed and service_role.rc == 255
@@ -44,7 +44,7 @@
 
 - name: Attach policies to service role
   command: >
-    aws {{ aws_args }} iam attach-role-policy
+    {{ aws }} iam attach-role-policy
     --policy-arn {{ item }}
     --role-name Greengrass-Service-Role
   register: iam_service_role_attach
@@ -55,11 +55,11 @@
   when: iam_service_role_create.changed
 
 - name: Associate service role
-  command: aws {{ aws_args }} greengrass associate-service-role-to-account --role-arn {{ service_role_arn }}
+  command: {{ aws }} greengrass associate-service-role-to-account --role-arn {{ service_role_arn }}
   when: service_role_arn is defined
 
 - name: List greengrass groups
-  command: aws {{ aws_args }} greengrass list-groups
+  command: {{ aws }} greengrass list-groups
   register: greengrass_groups
 
 - name: set greengrass_groups json
@@ -76,7 +76,7 @@
   debug: var=greengrass_groups_json
 
 - name: List greengrass cores
-  command: aws {{ aws_args }} greengrass list-core-definitions
+  command: {{ aws }} greengrass list-core-definitions
   register: greengrass_cores
 
 - name: set greengrass_cores json
@@ -90,7 +90,7 @@
   when: greengrass_cores_json is defined
 
 - name: List iot things
-  command: aws {{ aws_args }} iot list-things
+  command: {{ aws }} iot list-things
   register: iot_things
 
 - name: set iot_things json
@@ -107,7 +107,7 @@
   debug: var=iot_thing_list
 
 - name: List iot thing policies
-  command: aws {{ aws_args }} iot list-policies
+  command: {{ aws }} iot list-policies
   register: iot_thing_policies
 
 - name: set iot_thing_policies json
