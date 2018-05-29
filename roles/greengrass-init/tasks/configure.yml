@@ -107,7 +107,7 @@
   debug: var=iot_thing_list
 
 - name: List iot thing policies
-  command: {{ aws }} iot list-policies
+  command: "{{ aws }} iot list-policies"
   register: iot_thing_policies
 
 - name: set iot_thing_policies json
