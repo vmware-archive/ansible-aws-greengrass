@@ -15,7 +15,8 @@
   when: greengrass_groups_json is defined
 
 - name: Create a greengrass group
-  command: aws greengrass create-group --name "{{ greengrass_group_name }}"
+  command: >
+    {{ aws }} greengrass create-group --name "{{ greengrass_group_name }}"
   register: greengrass_group_create
   when:
     - greengrass_group_list is defined
@@ -57,7 +58,8 @@
     core_name: "{{ greengrass_group_name }}_Core"
 
 - name: Create a policy for core
-  command: aws iot create-policy
+  command: >
+    {{ aws }} iot create-policy
     --policy-name '{{ core_name }}-policy'
     --policy-document {{ greengrass_core_policy }}
   register: iot_core_policy_create
@@ -66,7 +68,8 @@
     - "core_name ~ '-policy' not in iot_thing_policy_list"
 
 - name: Create our greengrass core for the group
-  command: aws greengrass create-core-definition --name "{{ core_name }}"
+  command: >
+    {{ aws }} greengrass create-core-definition --name "{{ core_name }}"
   register: greengrass_core_create
   when:
     - greengrass_core_list is defined
@@ -93,11 +96,11 @@
   block:
     - debug:
         msg: "Creating greengrass core {{ core_name }}."
-    - command: aws iot create-thing --thing-name "{{ core_name }}"
+    - command: "{{ aws }} iot create-thing --thing-name {{ core_name }}"
       register: iot_thing_create_core
     - set_fact:
         core_arn: "{{ iot_thing_create_core.stdout | from_json | json_query('thingArn') }}"
-    - command: aws iot create-keys-and-certificate --set-as-active
+    - command: "{{ aws }} iot create-keys-and-certificate --set-as-active"
       register: core_keys_and_certs
     - set_fact:
         core_certificate_pem: >
@@ -107,6 +110,8 @@
         core_certificate_key: "{{ core_keys_and_certs.stdout | from_json | json_query('keyPair.PrivateKey') }}"
     - set_fact:
         core_certificate_arn: "{{ core_keys_and_certs.stdout | from_json | json_query('certificateArn') }}"
+    - set_fact:
+        core_certificate_id: "{{ core_keys_and_certs.stdout | from_json | json_query('certificateId') }}"
     - name: create temporary directory for core config
       tempfile:
         state: directory
@@ -132,27 +137,43 @@
         path: "{{ core_temp.path }}/c*/*"
         dest: "{{ core_temp.path }}/{{ core_name }}-setup.tar.gz"
     - name: upload-greengrass-config-s3
-      aws_s3:
-        bucket: "{{ greengrass_s3_bucket }}"
-        object: "{{ core_name }}-setup.tar.gz"
-        src: "{{ core_temp.path }}/{{ core_name }}-setup.tar.gz"
-        mode: put
-        aws_access_key: "{{ aws_access_key }}"
-        aws_secret_key: "{{ aws_secret_key }}"
+      command: >
+        {{ aws }} s3 cp {{ core_temp.path }}/{{ core_name }}-setup.tar.gz
+        s3://{{ greengrass_s3_bucket }}/
       when: greengrass_s3_bucket is defined and not skip_s3_uploads
-    - command: aws iot attach-principal-policy
+    - command: >
+        {{ aws }} iot attach-principal-policy
         --policy-name '{{ core_name }}-policy'
         --principal '{{ core_certificate_arn }}'
-    - command: aws iot attach-thing-principal
+    - command: >
+        {{ aws }} iot attach-thing-principal
         --thing-name '{{ core_name }}'
         --principal '{{ core_certificate_arn }}'
+  rescue:
+    - debug:
+        msg: "Failed to create {{ core_name }}! Destroying what was created."
+    - command: "{{ aws }} iot delete-thing --thing-name {{ core_name }}"
+      ignore_errors: yes
+    - command: >
+        {{ aws }} iot update-certificate
+        --certificate-id "{{ core_certificate_id }}" --new-status INACTIVE
+      ignore_errors: yes
+    - command: >
+        {{ aws }} iot delete-certificate
+        --certificate-id "{{ core_certificate_id }}"
+      ignore_errors: yes
+    - command: >
+        {{ aws }} s3 rm
+        s3://{{ greengrass_s3_bucket }}/{{ core_temp.path }}/{{ core_name }}-setup.tar.gz
+      ignore_errors: yes
+    - fail: msg="Failed to create core {{ core_name }}!"
   when:
     - iot_thing_list is defined
     - core_name not in iot_thing_list
 
-- name: Fetch the core certificate ARN if we didnt just create it
+- name: Fetch the core certificate ARN if we did not just create it
   block:
-    - command: aws iot list-thing-principals --thing-name {{ core_name }}
+    - command: "{{ aws }} iot list-thing-principals --thing-name {{ core_name }}"
       register: thing_principals
     - set_fact:
         thing_principals_json: "{{ thing_principals.stdout | from_json }}"
@@ -165,7 +186,9 @@
   when: core_certificate_arn is undefined
 
 - name: List core definition versions
-  command: aws greengrass list-core-definition-versions --core-definition-id {{ core_id }}
+  command: >
+    {{ aws }} greengrass list-core-definition-versions
+    --core-definition-id {{ core_id }}
   register: core_definition_versions
   when: core_id is defined
 
@@ -194,7 +217,8 @@
         src: core_definition.json.j2
         dest: "{{ tmp_core.path }}/core_definition.json"
     - name: Create core definition version
-      command: aws greengrass create-core-definition-version
+      command: >
+        {{ aws }} greengrass create-core-definition-version
         --core-definition-id {{ core_id }}
         --cores file://{{ tmp_core.path }}/core_definition.json
       register: create_core_definition_version
@@ -209,7 +233,8 @@
   when: create_core_definition_version.changed
 
 - name: List group versions
-  command: aws greengrass list-group-versions
+  command: >
+    {{ aws }} greengrass list-group-versions
     --group-id {{ greengrass_group_id }}
   register: group_versions
   when:
@@ -233,7 +258,8 @@
 - name: Create a group version
   block:
     - name: Create core definition version
-      command: aws greengrass create-group-version
+      command: >
+        {{ aws }} greengrass create-group-version
         --group-id {{ greengrass_group_id }}
         --core-definition-version-arn {{ core_definition_version_arn }}
       register: create_group_version

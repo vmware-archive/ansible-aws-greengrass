@@ -2,6 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 ---
 # This role installs greengrass core and configures for communication.
+- name: show core to install
+  debug:
+    msg: "Deploying the Greengrass Core '{{ greengrass_core_id }}'."
+
 - name: add greengrass group
   group:
     name: ggc_group
@@ -101,6 +105,11 @@
     url: "{{ greengrass_core_setup_url }}"
     dest: files/generated/{{ greengrass_core_setup }}
   when: greengrass_core_setup_url is defined
+
+- name: set greengrass core setup tarball
+  set_fact:
+    greengrass_core_setup: "{{ greengrass_core_id }}-setup.tar.gz"
+  when: greengrass_core_setup is undefined
 
 - name: download-greengrass-config-s3
   aws_s3:

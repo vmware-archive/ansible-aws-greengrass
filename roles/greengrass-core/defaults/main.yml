@@ -17,7 +17,5 @@ greengrass_s3_bucket: s3-bucket-to-draw-files-from
 # as a host var if you want to deploy multiple cores.
 greengrass_core_id: name-of-core
 
-greengrass_core_setup: "{{ greengrass_core_id }}-setup.tar.gz"
-
 # Define this to download from the web rather than S3
 #greengrass_core_setup_url: http://localhost/{{ greengrass_core_setup }}

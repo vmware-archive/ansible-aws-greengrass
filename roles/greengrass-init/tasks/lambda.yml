@@ -4,7 +4,7 @@
 # Set up for running Lambdas in this account
 
 - name: List current roles
-  command: aws iam list-roles
+  command: "{{ aws }} iam list-roles"
   register: iam_roles
 
 - name: set lambda role fact
@@ -15,7 +15,9 @@
     lambda_role_query: "Roles[?RoleName=='Lambda-Greengrass-S3'].Arn"
 
 - name: Create lambda role
-  command: aws iam create-role --role-name Lambda-Greengrass-S3 --assume-role-policy-document {{ lambda_role }}
+  command: >
+    {{ aws }} iam create-role --role-name Lambda-Greengrass-S3
+    --assume-role-policy-document {{ lambda_role }}
   register: iam_lambda_role_create
   when: lambda_role_arn is defined and not lambda_role_arn
 
@@ -28,7 +30,7 @@
 
 - name: Attach policies to service role
   command: >
-    aws iam attach-role-policy
+    {{ aws }} iam attach-role-policy
     --policy-arn {{ item }}
     --role-name Lambda-Greengrass-S3
   register: iam_lambda_role_attach
