@@ -10,7 +10,7 @@
   tags: greengrass-lambda
 
 - name: Get IoT host
-  command: {{ aws }} iot describe-endpoint
+  command: "{{ aws }} iot describe-endpoint"
   register: describe_endpoint
 
 - name: set IoT host fact
