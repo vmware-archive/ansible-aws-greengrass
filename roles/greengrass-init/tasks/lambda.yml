@@ -4,7 +4,7 @@
 # Set up for running Lambdas in this account
 
 - name: List current roles
-  command: {{ aws }} iam list-roles
+  command: "{{ aws }} iam list-roles"
   register: iam_roles
 
 - name: set lambda role fact

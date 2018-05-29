@@ -55,7 +55,9 @@
   when: iam_service_role_create.changed
 
 - name: Associate service role
-  command: "{{ aws }} greengrass associate-service-role-to-account --role-arn {{ service_role_arn }}"
+  command: >
+    {{ aws }} greengrass associate-service-role-to-account
+    --role-arn {{ service_role_arn }}
   when: service_role_arn is defined
 
 - name: List greengrass groups
