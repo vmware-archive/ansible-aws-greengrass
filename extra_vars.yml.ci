@@ -18,7 +18,7 @@ aws_secret_key: 'AWS_SECRET_KEY'
 # Greengrass setup
 
 # This S3 bucket is used to store credentials, lambda code, etc.
-# The AWS credentials available to
+# The AWS credentials available to ansible must be able to write to the bucket.
 greengrass_s3_bucket: greengrass-items
 
 # Greengrass groups to create.  A matching core will be created for each group,
@@ -38,6 +38,9 @@ greengrass_device_count: 2
 # You might wish to set this to true if you have another plan to distribute
 # certificates and binaries, or for speedier testing.
 skip_s3_uploads: false
+
+# Bucket for lambda source
+staging_s3_bucket: greengrass-items
 
 # Define the lambdas that should be deployed to a Greengrass Core.
 # Every time a version of a function is increased, that will create a new

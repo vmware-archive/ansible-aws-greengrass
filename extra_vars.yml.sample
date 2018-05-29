@@ -18,7 +18,7 @@ aws_secret_key: 'your-AWS-secret-key'
 # Greengrass setup
 
 # This S3 bucket is used to store credentials, lambda code, etc.
-# The AWS credentials available to
+# The AWS credentials available to ansible must be able to write to the bucket.
 greengrass_s3_bucket: some-s3-bucket-to-contain-greengrass-archive-and-config
 
 # Greengrass groups to create.  A matching core will be created for each group,

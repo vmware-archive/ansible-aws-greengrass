@@ -3,19 +3,21 @@
 ---
 # Variables for customizing the deploy of lambda functions
 
-lambda_role_name: "Lambda-Greengrass-S3"
-lambda_role: "{{ lookup('file', 'lambda_role.json') | to_json | replace('\\n', '') }}"
+# This is the name for the that allows lambda execution from greengrass.
+# You may wish to customize with more permissions and a different name.
+#lambda_role_name: "Lambda-Greengrass-S3"
 
-aws_region: us-east-1
+# Preferred region.
+#aws_region: us-east-1
 
 # An S3 bucket is required; uploading a zip directly is too slow and exceeds
 # the signature threshold using the CLI.
-staging_s3_bucket: greengrass_lambdas
+#staging_s3_bucket: greengrass-lambdas
 
 # Set to true to bypass upload, if source is already on S3
-skip_s3_uploads: false
+#skip_s3_uploads: false
 
-lambdas: []
+#lambdas: []
 
 # Sample lambda setting
 # lambdas:
