@@ -8,5 +8,6 @@ WORKDIR /code
 
 RUN pip install -r requirements.txt
 
-CMD ["site.yml"]
+# These arguments assume the local inventory and extra_vars is already created.
+CMD ["site.yml", "-i", "inventory", "--extra-vars", "@extra_vars.yml"]
 ENTRYPOINT ["ansible-playbook"]

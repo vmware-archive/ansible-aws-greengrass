@@ -77,11 +77,13 @@ docker build -t vmware/ansible-aws-greengrass .
 
 Run the container interactively for debugging:
 ```
+# Build a version with debug tools
+docker build -t vmware/ansible-aws-greengrass:debug -f Dockerfile.debug .
 # For debugging, run the container with VNC so you can debug ansible.
-docker run -it -v $PWD:/code -p 5920:5920 --entrypoint /bin/bash vmware/ansible-aws-greengrass /vnc/vnc.sh
+docker run -it -v $PWD:/code -p 5920:5920 --entrypoint /bin/bash vmware/ansible-aws-greengrass:debug /vnc/vnc.sh
 # You can then connect with VNC to your docker host, port 5920 (display 20).
 # Or alternatively, run no-vnc:
-docker run -it -v $PWD:/code -p 6080:6080 --entrypoint /bin/bash vmware/ansible-aws-greengrass /novnc/novnc.sh
+docker run -it -v $PWD:/code -p 6080:6080 --entrypoint /bin/bash vmware/ansible-aws-greengrass:debug /novnc/novnc.sh
 # ...and then connect in a browser to your docker host, port 6080.
 ```
 

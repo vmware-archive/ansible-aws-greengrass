@@ -1,0 +1,6 @@
+vault_password
+extra_vars.yml*
+inventory
+# ansible retry files
+*.retry
+.git
