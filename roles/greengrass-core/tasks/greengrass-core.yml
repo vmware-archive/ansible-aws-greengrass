@@ -23,12 +23,17 @@
     url: "https://raw.githubusercontent.com/tianon/cgroupfs-mount/951c38ee8d802330454bdede20d85ec1c0f8d312/cgroupfs-mount"
     dest: /tmp/cgroupfs-mount.sh
   register: download_cgroupfs_mount
+  retries: 5
+  delay: 5
+  until: not download_cgroupfs_mount.failed
 
 - name: perms-cgroupfs-mount
   file:
     path: /tmp/cgroupfs-mount.sh
     mode: "+x"
-  when: not ansible_check_mode
+  when:
+    - download_cgroupfs_mount.changed
+    - not download_cgroupfs_mount.failed
 
 - name: cgroupfs-mount
   command: bash /tmp/cgroupfs-mount.sh
@@ -53,8 +58,11 @@
 - name: download-greengrass
   get_url:
     url: "{{ greengrass_package_url }}"
-    dest: files/generated/greengrass-linux-{{ greengrass_version }}.tar.gz
-    checksum: "{{ greengrass_checksum }}"
+    dest: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
+  register: download_greengrass
+  retries: 5
+  delay: 5
+  until: not download_greengrass.failed
   when: greengrass_package_url is defined
 
 - name: download-greengrass-s3
@@ -99,17 +107,21 @@
     url: "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem"
     dest: /greengrass/certs/root.ca.pem
     checksum: "{{ root_ca_checksum }}"
-
-- name: download-greengrass-config
-  get_url:
-    url: "{{ greengrass_core_setup_url }}"
-    dest: files/generated/{{ greengrass_core_setup }}
-  when: greengrass_core_setup_url is defined
+  register: download_root_ca
+  retries: 5
+  delay: 5
+  until: not download_root_ca.failed
 
 - name: set greengrass core setup tarball
   set_fact:
     greengrass_core_setup: "{{ greengrass_core_id }}-setup.tar.gz"
   when: greengrass_core_setup is undefined
+
+- name: download-greengrass-config
+  get_url:
+    url: "{{ greengrass_core_setup_url }}"
+    dest: /tmp/{{ greengrass_core_setup }}
+  when: greengrass_core_setup_url is defined
 
 - name: download-greengrass-config-s3
   aws_s3:
