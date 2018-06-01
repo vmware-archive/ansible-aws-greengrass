@@ -36,7 +36,7 @@ jobs:
         - ansible-playbook test.yml -i inventory -vv
     - stage: test_docker
       script:
-        - docker build -t vmware/ansible-aws-greengrass .
+        - docker build -t vmware/ansible-aws-greengrass:test -f Dockerfile.testing .
         - >
-          docker run -it --rm vmware/ansible-aws-greengrass site.yml
+          docker run -it --rm vmware/ansible-aws-greengrass:test site.yml
           -i inventory -v --extra-vars "@extra_vars.yml"
