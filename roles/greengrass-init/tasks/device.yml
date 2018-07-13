@@ -65,7 +65,11 @@
       command: >
         {{ aws }} s3 cp {{ device_temp.path }}/{{ device_name }}-setup.tar.gz
         s3://{{ greengrass_s3_bucket }}/
-      when: greengrass_s3_bucket is defined and not skip_s3_uploads
+      when:
+        - greengrass_s3_bucket is defined
+        - >-
+          (skip_s3_uploads is defined and not skip_s3_uploads) or
+          skip_s3_uploads is undefined
     - command: >
         {{ aws }} iot attach-principal-policy
         --policy-name '{{ device_name }}-policy'
