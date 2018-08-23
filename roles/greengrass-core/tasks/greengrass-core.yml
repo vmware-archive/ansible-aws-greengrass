@@ -58,7 +58,7 @@
 - name: download-greengrass
   get_url:
     url: "{{ greengrass_package_url }}"
-    dest: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
+    dest: /tmp/greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
   register: download_greengrass
   retries: 5
   delay: 5
@@ -68,15 +68,14 @@
 - name: download-greengrass-s3
   aws_s3:
     bucket: "{{ greengrass_s3_bucket }}"
-    object: greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
-    dest: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
+    object: greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
+    dest: /tmp/greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
     mode: get
     aws_access_key: "{{ aws_access_key }}"
     aws_secret_key: "{{ aws_secret_key }}"
   when:
     - aws_access_key is defined
     - aws_secret_key is defined
-    - greengrass_package_url is undefined
     - greengrass_package_url is undefined
     - not ansible_check_mode
 
@@ -92,12 +91,12 @@
 
 - name: Check that the greengrass install archive now exists
   stat:
-    path: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
+    path: /tmp/greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
   register: install_stat
 
 - name: unarchive-greengrass
   unarchive:
-    src: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
+    src: /tmp/greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
     dest: /
     remote_src: yes
   when: install_stat.stat.exists
@@ -150,6 +149,40 @@
     remote_src: yes
   when: setup_stat.stat.exists
 
+- name: copy systemd service unit
+  copy:
+    src: greengrassd.service
+    dest: /etc/systemd/system/greengrassd.service
+
+- name: Stop service greengrassd, if running
+  service:
+    name: greengrassd
+    state: stopped
+
+- name: Check for greengrass runtime log from prior installs
+  stat:
+    path: /greengrass/ggc/var/log/system/runtime.log
+  register: runtime_log_stat
+
+- name: Compress runtime log from prior runs, if any
+  archive:
+    path: /greengrass/ggc/var/log/system/runtime.log
+    dest: /greengrass/ggc/var/log/system/runtime.log.tar.gz
+    remove: yes
+  when: runtime_log_stat.stat.exists
+
 - name: start-greengrass
-  command: /greengrass/ggc/packages/{{ greengrass_version }}/greengrassd start
+  service:
+    name: greengrassd
+    enabled: yes
+    state: started
+  when: no_greengrass_start is undefined
+
+- name: wait for a success in the daemon log
+  wait_for:
+    path: /greengrass/ggc/var/log/system/runtime.log
+    search_regex: Deployment agent connected to cloud
+    delay: 10
+    timeout: 60
+  register: wait_for_success
   when: no_greengrass_start is undefined
