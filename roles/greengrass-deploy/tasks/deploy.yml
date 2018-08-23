@@ -47,7 +47,7 @@
   when:
     - group_id is defined
     - group_version_id is defined
-    - deployment_id is undefined
+    - deployment_id is undefined or deployment_id == ""
     - greengrass_group_name in greengrass_deploy
     - greengrass_deploy[greengrass_group_name].deploy is defined
     - greengrass_deploy[greengrass_group_name].deploy
@@ -70,3 +70,7 @@
     --group-id {{ group_id }}
   register: deployment_status
   when: deployment_id is defined
+
+- name: clear deployment ID for next iteration
+  set_fact:
+    deployment_id: ""
