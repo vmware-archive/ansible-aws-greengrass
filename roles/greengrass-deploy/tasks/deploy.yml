@@ -69,7 +69,7 @@
     --deployment-id {{ deployment_id }}
     --group-id {{ group_id }}
   register: deployment_status
-  when: deployment_id is defined
+  when: deployment_id is defined and group_id is defined
 
 - name: clear deployment ID for next iteration
   set_fact:
