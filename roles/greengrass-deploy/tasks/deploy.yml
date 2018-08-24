@@ -62,7 +62,7 @@
     deployment_id: "{{ deployment_json | json_query('DeploymentId') }}"
   when:
     - deployment_json is defined
-    - deployment_id is undefined
+    - deployment_id is undefined or deployment_id == ""
 
 - name: check status of create_deployment
   command: aws greengrass get-deployment-status
