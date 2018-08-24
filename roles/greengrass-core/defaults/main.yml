@@ -19,3 +19,10 @@ greengrass_core_id: name-of-core
 
 # Define this to download from the web rather than S3
 #greengrass_core_setup_url: http://localhost/{{ greengrass_core_setup }}
+
+# If true, watch for an expected string in the log file to validate
+# successful startup.
+greengrass_wait_for_success: true
+
+# The magic string; this may change in future core versions.
+greengrass_core_success_message: Deployment agent connected to cloud

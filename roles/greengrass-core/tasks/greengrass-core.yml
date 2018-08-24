@@ -181,8 +181,10 @@
 - name: wait for a success in the daemon log
   wait_for:
     path: /greengrass/ggc/var/log/system/runtime.log
-    search_regex: Deployment agent connected to cloud
+    search_regex: "{{ greengrass_core_success_message }}"
     delay: 10
     timeout: 60
   register: wait_for_success
-  when: no_greengrass_start is undefined
+  when:
+    - no_greengrass_start is undefined
+    - greengrass_wait_for_success
