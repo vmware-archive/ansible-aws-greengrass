@@ -158,6 +158,7 @@
   service:
     name: greengrassd
     state: stopped
+  when: no_greengrass_start is undefined
 
 - name: Check for greengrass runtime log from prior installs
   stat:
