@@ -255,6 +255,7 @@
   with_items: "{{ group_versions_json['Versions'] }}"
   loop_control:
     loop_var: group_version_item
+  when: group_versions_json is defined
 
 - name: Set function definition component of group, if defined
   set_fact:
@@ -272,6 +273,7 @@
   register: create_group_version
   when:
     - seeking_group_version
+    - greengrass_group_id is defined
 
 - name: set group_version json
   set_fact:
