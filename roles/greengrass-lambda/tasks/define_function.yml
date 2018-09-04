@@ -13,9 +13,11 @@
     lambda_arn_query: "Functions[?FunctionName=='{{ lambda.name }}'].FunctionArn | [0]"
   when: lambda_functions.changed and lambda_functions.rc == 0
 
-- name: Upload lambda source to S3 bucket
+- name: Upload lambda source to S3 bucket (first time)
   command: aws s3 cp {{ lambda.zip }} s3://{{ staging_s3_bucket }} --quiet
-  when: not skip_s3_uploads
+  when:
+    - lambda_arn is defined and not lambda_arn
+    - not skip_s3_uploads
 
 - name: Create the lambda
   command: aws lambda create-function --region {{ aws_region }}
@@ -40,6 +42,12 @@
   vars:
     version_query: "Versions[?Version=='{{ lambda.version }}'].FunctionArn | [0]"
   when: lambda_versions.changed and lambda_versions.rc == 0
+
+- name: Upload new lambda source to S3 bucket (updated version)
+  command: aws s3 cp {{ lambda.zip }} s3://{{ staging_s3_bucket }} --quiet
+  when:
+    - lambda_version_arn is defined and not lambda_version_arn
+    - not skip_s3_uploads
 
 - name: Update lambda code and publish a new version if not found
   command: aws lambda update-function-code

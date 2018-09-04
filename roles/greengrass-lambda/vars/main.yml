@@ -3,7 +3,7 @@
 ---
 # Variables for customizing the deploy of lambda functions
 
-# This is the name for the that allows lambda execution from greengrass.
+# This is the name for the role that allows lambda execution from greengrass.
 # You may wish to customize with more permissions and a different name.
 #lambda_role_name: "Lambda-Greengrass-S3"
 

@@ -5,8 +5,8 @@
 - hosts: greengrass-init
   tags: greengrass
   roles:
-    - { role: greengrass-init, tags: ['greengrass-init', 'greengrass-deploy'] }
     - { role: greengrass-lambda, tags: ['greengrass-lambda'] }
+    - { role: greengrass-init, tags: ['greengrass-init', 'greengrass-deploy'] }
     - { role: greengrass-deploy, tags: ['greengrass-deploy'] }
 
 - hosts: greengrass-core

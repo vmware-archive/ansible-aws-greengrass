@@ -47,17 +47,33 @@
   register: function_definitions
   when: function_definition_id is undefined
 
-- name: obtain current function definition
+# We use a lambda definition name to pick the most recent one.  This relies on
+# this role being used to deploy lambdas; this will ignore function definitions
+# created by hand, since their name won't follow the datestamp convention.
+# Mixing console-created and automation created configurations is not
+# recommended.
+- name: Obtain current function definition by name
   set_fact:
-    function_definition_id: >-
-      {{ function_definitions.stdout | from_json | json_query(def_query) }}
-    function_definition_arn: >-
-      {{ function_definitions.stdout | from_json | json_query(arn_query) }}
+    function_latest: >-
+      {{ function_definitions.stdout | from_json | json_query(names_query)
+         | sort(attribute='Name') | last }}
   vars:
-    def_query: "Definitions[0].Id"
-    arn_query: "Definitions[0].Arn"
+    names_query: "Definitions[?Name > ``]"
   when:
     - function_definitions.changed
+    - lambdas_updated is undefined or not lambdas_updated
+
+- name: Obtain current function definition attributes
+  set_fact:
+    function_definition_id: >-
+      {{ function_latest | json_query("Id") }}
+    function_definition_arn: >-
+      {{ function_latest | json_query("Arn") }}
+    function_definition_version_arn: >-
+      {{ function_latest | json_query("LatestVersionArn") }}
+  when:
+    - function_definitions.changed
+    - lambdas_updated is undefined or not lambdas_updated
 
 # If there's not a fn definition, make one
 - name: Create function definition
@@ -71,12 +87,12 @@
   set_fact:
     function_definition_id: >-
       {{ create_function_definition.stdout | from_json |
-      json_query(function_definition_id_query)}}"
+      json_query(function_definition_id_query)}}
   vars:
     function_definition_id_query: "Id"
   when: create_function_definition.changed
 
-- name: Create a function definition and version
+- name: Create a function definition version
   block:
     - tempfile:
         state: directory
@@ -95,9 +111,10 @@
       set_fact:
         function_definition_version: >-
           {{ create_function_definition_version.stdout | from_json |
-          json_query(version_query) }}
-      vars:
-        version_query: "Version"
+          json_query("Version") }}
+        function_definition_version_arn: >-
+          {{ create_function_definition_version.stdout | from_json |
+          json_query("Arn") }}
       when: create_function_definition_version.changed
   when:
     - lambdas_updated is defined and lambdas_updated == true
