@@ -1,0 +1,74 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+- name: get attributes of group version to consider
+  set_fact:
+    check_group_version: "{{ group_version_item | json_query('Version') }}"
+    check_group_version_id: "{{ group_version_item | json_query('Id') }}"
+  when:
+    - group_version_item is defined
+
+- name: Get details of group version
+  command: >
+    {{ aws }} greengrass get-group-version
+    --group-id {{ greengrass_group_id }}
+    --group-version-id {{ check_group_version }}
+  register: get_group_version
+  when:
+    - greengrass_group_id is defined
+    - check_group_version is defined
+    - seeking_group_version
+
+- name: set get_group_version json
+  set_fact:
+    get_group_version_json: "{{ get_group_version.stdout | from_json }}"
+  when: get_group_version.changed
+
+- name: Set initial value for group_version_found, assume a match
+  set_fact:
+    group_version_found: true
+
+- name: Extract core definition version from group version
+  set_fact:
+    got_core_definition_version_arn: >-
+      {{ get_group_version_json | json_query(core_def_arn_query) }}
+  vars:
+    core_def_arn_query: "Definition.CoreDefinitionVersionArn"
+  when:
+    - get_group_version_json is defined
+
+- name: Extract function definition version from group version
+  set_fact:
+    got_function_definition_version_arn: >-
+      {{ get_group_version_json | json_query(function_def_arn_query) }}
+  vars:
+    function_def_arn_query: "Definition.FunctionDefinitionVersionArn"
+  when:
+    - get_group_version_json is defined
+
+- name: group_version_found false; core definition version doesn't match
+  set_fact:
+    group_version_found: false
+  when:
+    - get_group_version_json is defined
+    - got_core_definition_version_arn is defined
+    - core_definition_version_arn is defined
+    - got_core_definition_version_arn != core_definition_version_arn
+
+- name: group_version_found false; fn definition version doesn't match
+  set_fact:
+    group_version_found: false
+  when:
+    - get_group_version_json is defined
+    - got_function_definition_version_arn is defined
+    - function_definition_version_arn is defined
+    - got_function_definition_version_arn != function_definition_version_arn
+
+- name: Set group_version_found, everything matches
+  set_fact:
+    seeking_group_version: false
+    group_version: "{{ check_group_version }}"
+    group_version_id: "{{ check_group_version_id }}"
+  when:
+    - group_version_found
+    - seeking_group_version

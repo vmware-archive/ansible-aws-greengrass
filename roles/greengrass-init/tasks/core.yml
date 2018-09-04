@@ -245,27 +245,33 @@
     group_versions_json: "{{ group_versions.stdout | from_json }}"
   when: group_versions.changed
 
-- name: check for group version
+- name: Set initial value for group_version_found; looking for a match
   set_fact:
-    group_version: "{{ group_versions_json | json_query(group_version_query) }}"
-    group_version_id: "{{ group_versions_json | json_query(group_version_id_query) }}"
-  vars:
-    group_version_query: "Versions[?Id=='{{ greengrass_group_id }}'].Version | [0]"
-    group_version_id_query: "Versions[?Id=='{{ greengrass_group_id }}'].Id | [0]"
-  when:
-    - group_versions_json is defined
+    seeking_group_version: true
 
-- name: Create a group version
-  block:
-    - name: Create core definition version
-      command: >
-        {{ aws }} greengrass create-group-version
-        --group-id {{ greengrass_group_id }}
-        --core-definition-version-arn {{ core_definition_version_arn }}
-      register: create_group_version
+# Iterate over group versions, to verify we have the needed version with the
+# current configuration.
+- include_tasks: group_version.yml
+  with_items: "{{ group_versions_json['Versions'] }}"
+  loop_control:
+    loop_var: group_version_item
+
+- name: Set function definition component of group, if defined
+  set_fact:
+    function_group_part: >-
+      --function-definition-version-arn {{ function_definition_version_arn }}
   when:
-    - group_version is defined
-    - not group_version
+    - function_definition_version_arn is defined
+
+- name: Create a group version if needed
+  command: >
+    {{ aws }} greengrass create-group-version
+    --group-id {{ greengrass_group_id }}
+    --core-definition-version-arn {{ core_definition_version_arn }}
+    {{ function_group_part | default("") }}
+  register: create_group_version
+  when:
+    - seeking_group_version
 
 - name: set group_version json
   set_fact:
