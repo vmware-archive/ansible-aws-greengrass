@@ -62,6 +62,7 @@
   when:
     - function_definitions.changed
     - lambdas_updated is undefined or not lambdas_updated
+  ignore_errors: true
 
 - name: Obtain current function definition attributes
   set_fact:
@@ -72,7 +73,7 @@
     function_definition_version_arn: >-
       {{ function_latest | json_query("LatestVersionArn") }}
   when:
-    - function_definitions.changed
+    - function_latest is defined
     - lambdas_updated is undefined or not lambdas_updated
 
 # If there's not a fn definition, make one
