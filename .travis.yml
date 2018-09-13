@@ -33,7 +33,7 @@ jobs:
       env:
         - AWS_ARGS=--no-verify-ssl
       script:
-        - ansible-playbook dev.yml -i inventory --extra-vars "@extra_vars.yml"
+        - ansible-galaxy install -r requirements.yml
         - cd roles/greengrass-init/tests
         - ansible-playbook test.yml -i inventory -vv
     - stage: test_docker
