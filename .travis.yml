@@ -18,16 +18,18 @@ addons:
 
 before_install:
   - cp inventory.local inventory
-  - cp extra_vars.yml.ci extra_vars.yml
-  - sed -ri "s:AWS_ACCESS_KEY:$AWS_ACCESS_KEY:" extra_vars.yml
-  - sed -ri "s:AWS_SECRET_KEY:$AWS_SECRET_KEY:" extra_vars.yml
+  - mkdir -p group_vars/all
+  - cp extra_vars.yml.ci vars.yml
+  - sed -ri "s:AWS_ACCESS_KEY:$AWS_ACCESS_KEY:" vars.yml
+  - sed -ri "s:AWS_SECRET_KEY:$AWS_SECRET_KEY:" vars.yml
+  - mv vars.yml group_vars/all
 jobs:
   include:
     - stage: lint
       script:
         - ansible-galaxy install -r requirements.yml
         - >
-          ansible-playbook site.yml -i inventory --extra-vars "@extra_vars.yml"
+          ansible-playbook site.yml -i inventory
           --check --skip-tag greengrass-core
     - stage: test_roles
       env:
@@ -35,7 +37,9 @@ jobs:
       script:
         - ansible-galaxy install -r requirements.yml
         - cd roles/greengrass-init/tests
-#        - ansible-playbook test.yml -i inventory -vv
+        - >
+          ansible-playbook roles/greengrass-init/tests/test.yml
+          -i roles/greengrass-init/tests/inventory -vv
     - stage: test_docker
       script:
         - >
@@ -43,4 +47,4 @@ jobs:
           -f Dockerfile.testing .
         - >
           docker run -it --rm vmware/ansible-aws-greengrass:test site.yml
-          -i inventory -v --extra-vars "@extra_vars.yml"
+          -i inventory -v
