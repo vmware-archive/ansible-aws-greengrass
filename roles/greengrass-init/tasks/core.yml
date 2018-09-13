@@ -232,6 +232,9 @@
     core_definition_version_arn: "{{ create_core_definition_version.stdout | from_json | json_query('Arn') }}"
   when: create_core_definition_version.changed
 
+- name: Create a greengrass device definition for this group
+  include_tasks: device_definition.yml
+
 - name: List group versions
   command: >
     {{ aws }} greengrass list-group-versions
@@ -264,12 +267,20 @@
   when:
     - function_definition_version_arn is defined
 
+- name: Set device definition component of group, if defined
+  set_fact:
+    device_group_part: >-
+      --device-definition-version-arn {{ device_definition_version_arn }}
+  when:
+    - device_definition_version_arn is defined
+
 - name: Create a group version if needed
   command: >
     {{ aws }} greengrass create-group-version
     --group-id {{ greengrass_group_id }}
     --core-definition-version-arn {{ core_definition_version_arn }}
     {{ function_group_part | default("") }}
+    {{ device_group_part | default("") }}
   register: create_group_version
   when:
     - seeking_group_version

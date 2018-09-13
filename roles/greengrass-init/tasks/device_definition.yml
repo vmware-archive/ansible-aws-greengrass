@@ -1,0 +1,122 @@
+# Copyright © 2018 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+# These tasks assemble a set of devices into a device definition for the group.
+
+# - name: List things (possible devices)
+#   command: aws iot list-things
+#   register: iot_things
+
+# - name: set iot_things json
+#   set_fact:
+#     device_functions_json: "{{ iot_things.stdout | from_json }}"
+#   when: iot_things.changed
+#
+# - name: set device arn list to initial empty
+#   set_fact:
+#     device_info: []
+
+- name: Set device definition name, device set
+  set_fact:
+    device_definition_name: >-
+      ansible_{{ greengrass_group_devices[greengrass_group_name]
+      | hash('md5') }}
+    devices: "{{ greengrass_group_devices[greengrass_group_name] }}"
+    device_certificate_arns: {}
+    device_details: {}
+  when:
+    - greengrass_group_devices is defined
+    - device_definition_name is not defined or device_definition_name == ""
+
+- include_tasks: device.yml
+  loop: "{{ greengrass_group_devices[greengrass_group_name] }}"
+  loop_control:
+    loop_var: device_info
+  when:
+    - greengrass_group_devices is defined
+    - greengrass_group_name in greengrass_group_devices
+
+- name: List device definitions
+  command: aws greengrass list-device-definitions
+  register: device_definitions
+  when: device_definition_id is undefined
+
+- name: Obtain current device definition by name
+  set_fact:
+    device_latest: >-
+      {{ device_definitions.stdout | from_json | json_query(names_query) }}
+  vars:
+    names_query: "Definitions[?Name == '{{ device_definition_name }}'] | [0]"
+  when:
+    - device_definitions.changed
+
+- name: Obtain current device definition attributes
+  set_fact:
+    device_definition_id: >-
+      {{ device_latest | json_query("Id") }}
+    device_definition_arn: >-
+      {{ device_latest | json_query("Arn") }}
+    device_definition_version_arn: >-
+      {{ device_latest | json_query("LatestVersionArn") }}
+  when: device_latest is defined
+
+# If there's not a device definition, make one
+- name: Create device definition
+  command: aws greengrass create-device-definition
+    --name {{ device_definition_name | default(ansible_date_time.iso8601) }}
+  register: create_device_definition
+  when:
+    - device_definition_id is undefined or not device_definition_id
+
+- name: Extract device definition
+  set_fact:
+    device_definition_id: >-
+      {{ create_device_definition.stdout | from_json |
+      json_query("Id")}}
+    device_definition_arn: >-
+      {{ create_device_definition.stdout | from_json |
+      json_query("Arn")}}
+    device_definition_version_arn: >-
+      {{ create_device_definition.stdout | from_json |
+      json_query("LatestVersionArn")}}
+  vars:
+    device_definition_id_query: "Id"
+  when: create_device_definition.changed
+
+- name: debug device data
+  debug: var=device_certificate_arns
+
+- name: debug device data
+  debug: var=device_details
+
+- name: Create a device definition version
+  block:
+    - tempfile:
+        state: directory
+        suffix: fn_def
+      register: tmp_device
+    - name: Template out device config
+      template:
+        src: device_definition.json.j2
+        dest: "{{ tmp_device.path }}/device_definition.json"
+    - name: Create device definition version
+      command: aws greengrass create-device-definition-version
+        --device-definition-id {{ device_definition_id }}
+        --devices file://{{ tmp_device.path }}/device_definition.json
+      register: create_device_definition_version
+    - name: Extract device definition version
+      set_fact:
+        device_definition_version: >-
+          {{ create_device_definition_version.stdout | from_json |
+          json_query("Version") }}
+        device_definition_version_arn: >-
+          {{ create_device_definition_version.stdout | from_json |
+          json_query("Arn") }}
+      when: create_device_definition_version.changed
+  when:
+    - device_definition_version_arn is undefined or
+      device_definition_version_arn == ""
+
+- name: Clear device definition name for next pass
+  set_fact:
+    device_definition_name: ""
