@@ -141,7 +141,8 @@ ansible-playbook site.yml -i inventory --extra-vars "@extra_vars.yml" -kK --tags
 
 ## Documentation
 
-See code files for further documentation.
+See code files for further documentation.  The ```extra_vars.yml.sample``` file
+has sample settings for customization for your environment.
 
 ## Releases & Major Branches
 

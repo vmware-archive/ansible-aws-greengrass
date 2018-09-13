@@ -40,6 +40,23 @@ greengrass_group_names:
 greengrass_device_stub: my-device
 greengrass_device_count: 3
 
+greengrass_group_devices:
+  mygroup-1:
+    - name: my-device1
+      sync_shadow: true
+    - name: my-device2
+      sync_shadow: false
+
+# Coming soon: subscriptions
+greengrass_group_subscriptions:
+  mygroup-1:
+    - source: my-device1
+      subject: $aws/things/#
+      target: some_function_name
+    - source: my-device2
+      subject: $aws/things/#
+      target: some_function_name
+
 # You might wish to set this to true if you have another plan to distribute
 # certificates and binaries, or for speedier testing.
 skip_s3_uploads: false
