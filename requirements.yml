@@ -1,0 +1,2 @@
+---
+- src: vmware.ansible_role_greengrass_awscli
