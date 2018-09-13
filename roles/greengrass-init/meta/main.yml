@@ -15,4 +15,5 @@ galaxy_info:
     - aws
     - greengrass
     - iot
-dependencies: []
+dependencies:
+  - role: vmware.ansible_role_greengrass_awscli

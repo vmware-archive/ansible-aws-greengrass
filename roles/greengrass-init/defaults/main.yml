@@ -7,7 +7,6 @@ core_name_suffix: "_Core"
 # SPDX-License-Identifier: Apache-2.0
 
 # greengrass variables for creating necessary IoT things.
-greengrass_device_type: "cask-sensor"
 
 # Probably want to supply a value for this as a inventory, extra, or role var.
 greengrass_group_names: [ no-name ]

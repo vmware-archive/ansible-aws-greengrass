@@ -1,0 +1,10 @@
+[
+  {% for device in devices %}
+  {
+    "CertificateArn": "{{ device_details[device.name+'_cert_arn'] }}",
+    "Id": "{{ device_details[device.name+'_id'] }}",
+    "SyncShadow": {{ "true" if device.sync_shadow else "false" }},
+    "ThingArn": "{{ device_details[device.name+'_arn'] }}"
+  }{{ "," if not loop.last else "" }}
+  {% endfor %}
+]

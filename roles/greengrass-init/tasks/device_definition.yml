@@ -22,7 +22,7 @@
     - greengrass_group_name in greengrass_group_devices
 
 - name: List device definitions
-  command: aws greengrass list-device-definitions
+  command: "{{ aws }} greengrass list-device-definitions"
   register: device_definitions
   when: device_definition_id is undefined
 
@@ -47,7 +47,8 @@
 
 # If there's not a device definition, make one
 - name: Create device definition
-  command: aws greengrass create-device-definition
+  command: >
+    {{ aws }} greengrass create-device-definition
     --name {{ device_definition_name | default(ansible_date_time.iso8601) }}
   register: create_device_definition
   when:
@@ -82,7 +83,8 @@
         src: device_definition.json.j2
         dest: "{{ tmp_device.path }}/device_definition.json"
     - name: Create device definition version
-      command: aws greengrass create-device-definition-version
+      command: >
+        {{ aws }} greengrass create-device-definition-version
         --device-definition-id {{ device_definition_id }}
         --devices file://{{ tmp_device.path }}/device_definition.json
       register: create_device_definition_version
