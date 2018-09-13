@@ -37,15 +37,6 @@
   when:
     - get_group_version_json is defined
 
-- name: Extract function definition version from group version
-  set_fact:
-    got_function_definition_version_arn: >-
-      {{ get_group_version_json | json_query(function_def_arn_query) }}
-  vars:
-    function_def_arn_query: "Definition.FunctionDefinitionVersionArn"
-  when:
-    - get_group_version_json is defined
-
 - name: group_version_found false; core definition version doesn't match
   set_fact:
     group_version_found: false
@@ -55,6 +46,15 @@
     - core_definition_version_arn is defined
     - got_core_definition_version_arn != core_definition_version_arn
 
+- name: Extract function definition version from group version
+  set_fact:
+    got_function_definition_version_arn: >-
+      {{ get_group_version_json | json_query(function_def_arn_query) }}
+  vars:
+    function_def_arn_query: "Definition.FunctionDefinitionVersionArn"
+  when:
+    - get_group_version_json is defined
+
 - name: group_version_found false; fn definition version doesn't match
   set_fact:
     group_version_found: false
@@ -63,6 +63,24 @@
     - got_function_definition_version_arn is defined
     - function_definition_version_arn is defined
     - got_function_definition_version_arn != function_definition_version_arn
+
+- name: Extract device definition version from group version
+  set_fact:
+    got_device_definition_version_arn: >-
+      {{ get_group_version_json | json_query(device_def_arn_query) }}
+  vars:
+    device_def_arn_query: "Definition.DeviceDefinitionVersionArn"
+  when:
+    - get_group_version_json is defined
+
+- name: group_version_found false; device definition version doesn't match
+  set_fact:
+    group_version_found: false
+  when:
+    - get_group_version_json is defined
+    - got_device_definition_version_arn is defined
+    - device_definition_version_arn is defined
+    - got_device_definition_version_arn != device_definition_version_arn
 
 - name: Set group_version_found, everything matches
   set_fact:
