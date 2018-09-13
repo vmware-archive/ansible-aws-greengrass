@@ -21,14 +21,14 @@ before_install:
   - cp extra_vars.yml.ci extra_vars.yml
   - sed -ri "s:AWS_ACCESS_KEY:$AWS_ACCESS_KEY:" extra_vars.yml
   - sed -ri "s:AWS_SECRET_KEY:$AWS_SECRET_KEY:" extra_vars.yml
-  - which ansible-playbook
-  - ansible-galaxy install -r requirements.yml
 jobs:
   include:
     - stage: lint
-      script: >
-        ansible-playbook site.yml -i inventory --extra-vars "@extra_vars.yml"
-        --check --skip-tag greengrass-core
+      script:
+        - ansible-galaxy install -r requirements.yml
+        - >
+          ansible-playbook site.yml -i inventory --extra-vars "@extra_vars.yml"
+          --check --skip-tag greengrass-core
     - stage: test_roles
       env:
         - AWS_ARGS=--no-verify-ssl
@@ -38,7 +38,9 @@ jobs:
         - ansible-playbook test.yml -i inventory -vv
     - stage: test_docker
       script:
-        - docker build -t vmware/ansible-aws-greengrass:test -f Dockerfile.testing .
+        - >
+          docker build -t vmware/ansible-aws-greengrass:test
+          -f Dockerfile.testing .
         - >
           docker run -it --rm vmware/ansible-aws-greengrass:test site.yml
           -i inventory -v --extra-vars "@extra_vars.yml"
