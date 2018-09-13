@@ -2,27 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 ---
 # These tasks assemble a set of devices into a device definition for the group.
-
-# - name: List things (possible devices)
-#   command: aws iot list-things
-#   register: iot_things
-
-# - name: set iot_things json
-#   set_fact:
-#     device_functions_json: "{{ iot_things.stdout | from_json }}"
-#   when: iot_things.changed
-#
-# - name: set device arn list to initial empty
-#   set_fact:
-#     device_info: []
-
 - name: Set device definition name, device set
   set_fact:
     device_definition_name: >-
       ansible_{{ greengrass_group_devices[greengrass_group_name]
       | hash('md5') }}
     devices: "{{ greengrass_group_devices[greengrass_group_name] }}"
-    device_certificate_arns: {}
     device_details: {}
   when:
     - greengrass_group_devices is defined
@@ -84,9 +69,6 @@
   when: create_device_definition.changed
 
 - name: debug device data
-  debug: var=device_certificate_arns
-
-- name: debug device data
   debug: var=device_details
 
 - name: Create a device definition version
@@ -114,6 +96,7 @@
           json_query("Arn") }}
       when: create_device_definition_version.changed
   when:
+    - device_definition_id is defined
     - device_definition_version_arn is undefined or
       device_definition_version_arn == ""
 

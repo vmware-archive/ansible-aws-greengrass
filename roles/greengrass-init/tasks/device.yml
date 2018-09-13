@@ -8,6 +8,11 @@
     device_name: "{{ greengrass_device_stub }}{{ device_index }}"
   when: device_index is defined
 
+- name: set device_name
+  set_fact:
+    device_name: "{{ device_info['name'] }}"
+  when: device_info is defined
+
 - name: Create a policy for the device thing
   command: >
     {{ aws }} iot create-policy --policy-name "{{ device_name }}-policy"
@@ -16,6 +21,60 @@
   when:
     - iot_thing_policy_list is defined
     - "device_name ~ '-policy' not in iot_thing_policy_list"
+
+- name: Record thing details
+  block:
+    - command: >
+        {{ aws }} iot describe-thing --thing-name "{{ device_name }}"
+      register: iot_describe_thing
+    - command: >
+        {{ aws }} iot list-thing-principals --thing-name "{{ device_name }}"
+      register: iot_list_thing_principals
+    - set_fact:
+        certificate_arn: >-
+          {{ iot_list_thing_principals.stdout | from_json |
+          json_query('principals[0]') }}
+    - set_fact:
+        thing_id: >-
+          {{ iot_describe_thing.stdout | from_json |
+          json_query('thingId') }}
+        thing_arn: >-
+            {{ iot_describe_thing.stdout | from_json |
+            json_query('thingArn') }}
+        certificate_arn: >-
+          {{ iot_list_thing_principals.stdout | from_json |
+          json_query('principals[0]') }}
+    - name: Add thing arn to collected thing data
+      set_fact:
+        _entry: "{ '{{ device_name }}_arn': '{{ thing_arn }}' }"
+      when: thing_arn is defined
+    - name: Add thing arn to collected device data
+      set_fact:
+        device_details: >-
+          {{ device_details | combine ( _entry ) }}
+      when: certificate_arn is defined
+    - name: Add thing id to collected thing data
+      set_fact:
+        _entry: "{ '{{ device_name }}_id': '{{ thing_id }}' }"
+      when: thing_id is defined
+    - name: Add thing id to collected device data
+      set_fact:
+        device_details: >-
+          {{ device_details | combine ( _entry ) }}
+      when: certificate_arn is defined
+    - name: Add certificate arn to collected thing data
+      set_fact:
+        _entry: "{ '{{ device_name }}_cert_arn': '{{ certificate_arn }}' }"
+      when: certificate_arn is defined
+    - name: Add certificate arn to collected device data
+      set_fact:
+        device_details: >-
+          {{ device_details | combine ( _entry ) }}
+      when: certificate_arn is defined
+  when:
+    - iot_thing_list is defined
+    - device_name in iot_thing_list
+    - device_info is defined
 
 - name: create the thing
   block:
