@@ -133,6 +133,13 @@
   become_user: root
   when: ansible_os_family == "Debian"
 
+- name: Create our greengrass device things
+  include_tasks: device.yml
+  with_sequence: start=1 end={{ greengrass_device_count }}
+  loop_control:
+    loop_var: device_index
+  when: greengrass_device_count is defined
+
 - set_fact:
     ggc_groups: {}
 
@@ -141,10 +148,3 @@
   with_items: "{{ greengrass_group_names }}"
   loop_control:
     loop_var: greengrass_group_name
-
-- name: Create our greengrass device things
-  include_tasks: device.yml
-  with_sequence: start=1 end={{ greengrass_device_count }}
-  loop_control:
-    loop_var: device_index
-  when: greengrass_device_count is defined
