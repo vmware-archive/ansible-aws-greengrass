@@ -35,7 +35,7 @@ jobs:
       script:
         - ansible-galaxy install -r requirements.yml
         - cd roles/greengrass-init/tests
-        - ansible-playbook test.yml -i inventory -vv
+#        - ansible-playbook test.yml -i inventory -vv
     - stage: test_docker
       script:
         - >
