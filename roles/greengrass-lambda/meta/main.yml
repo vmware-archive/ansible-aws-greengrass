@@ -1,0 +1,22 @@
+galaxy_info:
+  author: John Gardner
+  description: AWS Greengrass Lambda automation (create, version functions)
+  company: VMware
+  license: license (Apache)
+  min_ansible_version: 2.5
+  platforms:
+  - name: Debian
+    versions:
+    - all
+  - name: Ubuntu
+    versions:
+    - all
+  galaxy_tags:
+    - aws
+    - greengrass
+    - lambda
+    - function
+    - iot
+    - serverless
+dependencies:
+  - role: vmware.ansible_role_greengrass_awscli

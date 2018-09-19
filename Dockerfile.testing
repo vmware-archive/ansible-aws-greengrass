@@ -2,13 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 FROM williamyeh/ansible:ubuntu16.04
 
-VOLUME /code
 ADD . /code
 WORKDIR /code
 
 RUN pip install -r requirements.txt
 RUN ansible-galaxy install -r requirements.yml
+RUN mkdir -p group_vars/all
+RUN echo "developer_user: root" >> group_vars/all/vars.yml
+
+VOLUME /code
 
 # These arguments assume the local inventory and extra_vars is already created.
-CMD ["site.yml", "-i", "inventory", "--extra-vars", "@extra_vars.yml"]
+CMD ["site.yml", "-i", "inventory.local"]
 ENTRYPOINT ["ansible-playbook"]
