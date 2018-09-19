@@ -235,6 +235,9 @@
 - name: Create a greengrass device definition for this group
   include_tasks: device_definition.yml
 
+- name: Create a greengrass subscription definition for this group
+  include_tasks: subscription_definition.yml
+
 - name: List group versions
   command: >
     {{ aws }} greengrass list-group-versions
@@ -274,6 +277,14 @@
   when:
     - device_definition_version_arn is defined
 
+- name: Set subscription definition component of group, if defined
+  set_fact:
+    subscription_group_part: >-
+      --subscription-definition-version-arn
+      {{ subscription_definition_version_arn }}
+  when:
+    - subscription_definition_version_arn is defined
+
 - name: Create a group version if needed
   command: >
     {{ aws }} greengrass create-group-version
@@ -281,6 +292,7 @@
     --core-definition-version-arn {{ core_definition_version_arn }}
     {{ function_group_part | default("") }}
     {{ device_group_part | default("") }}
+    {{ subscription_group_part | default("") }}
   register: create_group_version
   when:
     - seeking_group_version

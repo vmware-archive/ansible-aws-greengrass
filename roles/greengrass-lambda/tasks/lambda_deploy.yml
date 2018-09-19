@@ -35,6 +35,7 @@
 
 - name: set lambda arn list to initial empty
   set_fact:
+    lambda_details: {}
     lambda_version_arns: []
 
 - include_tasks: define_function.yml
@@ -88,9 +89,7 @@
   set_fact:
     function_definition_id: >-
       {{ create_function_definition.stdout | from_json |
-      json_query(function_definition_id_query)}}
-  vars:
-    function_definition_id_query: "Id"
+      json_query("Id")}}
   when: create_function_definition.changed
 
 - name: Create a function definition version

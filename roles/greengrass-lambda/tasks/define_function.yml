@@ -30,6 +30,13 @@
   register: lambda_create
   when: lambda_arn is defined and not lambda_arn
 
+- name: Extract lambda function arn from created
+  set_fact:
+    lambda_arn: "{{ lambda_functions_json | json_query(lambda_arn_query)}}"
+  vars:
+    lambda_arn_query: "FunctionArn"
+  when: lambda_create.changed and lambda_create.rc == 0
+
 - name: List lambda versions
   command: >
     aws lambda list-versions-by-function
@@ -79,3 +86,18 @@
   set_fact:
     lambdas_updated: true
   when: update_code.changed
+
+- name: Record lambda details
+  block:
+    - name: Add lamba arn to collected lambda data entry
+      set_fact:
+        _entry: "{ '{{ lambda.name }}_arn': '{{ lambda_version_arn }}' }"
+      when: lambda_version_arn is defined
+    - name: Add lambda arn to collected lambda data
+      set_fact:
+        lambda_details: >-
+          {{ lambda_details | combine ( _entry ) }}
+      when: lambda_arn is defined
+  when:
+    - lambda_arn is defined
+    - lambda_details is defined

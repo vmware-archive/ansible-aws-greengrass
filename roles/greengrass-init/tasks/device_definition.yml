@@ -11,6 +11,7 @@
     device_details: {}
   when:
     - greengrass_group_devices is defined
+    - greengrass_group_name in greengrass_group_devices
     - device_definition_name is not defined or device_definition_name == ""
 
 - include_tasks: device.yml

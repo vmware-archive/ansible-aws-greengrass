@@ -82,6 +82,30 @@
     - device_definition_version_arn is defined
     - got_device_definition_version_arn != device_definition_version_arn
 
+- name: Extract subscription definition version from group version
+  set_fact:
+    got_subscription_definition_version_arn: >-
+      {{ get_group_version_json | json_query(subscription_def_arn_query) }}
+  vars:
+    subscription_def_arn_query: "Definition.SubscriptionDefinitionVersionArn"
+  when:
+    - get_group_version_json is defined
+
+- name: group_version_found false; subscription definition version doesn't match
+  set_fact:
+    group_version_found: false
+  when:
+    - get_group_version_json is defined
+    - got_subscription_definition_version_arn is defined
+    - subscription_definition_version_arn is defined
+    - got_subscription_definition_version_arn !=
+      subscription_definition_version_arn
+
+- name: debug group version search
+  debug:
+    msg: "For group ver {{ check_group_version_id }}, seeking: {{ seeking_group_version }}, found: {{ group_version_found }}"
+    verbosity: 3
+
 - name: Set group_version_found, everything matches
   set_fact:
     seeking_group_version: false
