@@ -35,6 +35,7 @@
     names_query: "Definitions[?Name == '{{ device_definition_name }}'] | [0]"
   when:
     - device_definitions.changed
+    - device_definition_name is defined and device_definition_name != ""
 
 - name: Obtain current device definition attributes
   set_fact:
@@ -54,6 +55,7 @@
   register: create_device_definition
   when:
     - device_definition_id is undefined or not device_definition_id
+    - device_definition_name is defined and device_definition_name != ""
 
 - name: Extract device definition
   set_fact:
@@ -102,6 +104,7 @@
     - device_definition_id is defined
     - device_definition_version_arn is undefined or
       device_definition_version_arn == ""
+    - device_definition_name is defined and device_definition_name != ""
 
 - name: Clear device definition name for next pass
   set_fact:
