@@ -25,7 +25,9 @@
 - name: List device definitions
   command: "{{ aws }} greengrass list-device-definitions"
   register: device_definitions
-  when: device_definition_id is undefined
+  when:
+    - device_definition_id is undefined
+    - device_definition_name is defined and device_definition_name != ""
 
 - name: Obtain current device definition by name
   set_fact:

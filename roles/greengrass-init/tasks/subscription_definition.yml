@@ -12,22 +12,16 @@
     subscription_details: {}
   when:
     - greengrass_group_subscriptions is defined
+    - greengrass_group_name in greengrass_group_subscriptions
     - subscription_def_name is not defined or
       subscription_def_name == ""
-    - greengrass_group_name in greengrass_group_subscriptions
-
-# - include_tasks: subscription.yml
-#   loop: "{{ greengrass_group_subscriptions[greengrass_group_name] }}"
-#   loop_control:
-#     loop_var: subscription_info
-#   when:
-#     - greengrass_group_subscriptions is defined
-#     - greengrass_group_name in greengrass_group_subscriptions
 
 - name: List subscription definitions
   command: "{{ aws }} greengrass list-subscription-definitions"
   register: subscription_definitions
-  when: subscription_definition_id is undefined
+  when:
+    - subscription_definition_id is undefined
+    - subscription_def_name is defined and subscription_def_name != ""
 
 - name: Obtain current subscription definition by name
   set_fact:
@@ -56,6 +50,7 @@
   register: create_subscription_definition
   when:
     - subscription_definition_id is undefined or not subscription_definition_id
+    - subscription_def_name is defined and subscription_def_name != ""
 
 - name: Extract subscription definition
   set_fact:
@@ -75,7 +70,6 @@
 - name: debug subscription data
   debug: var=subscription_details
 
-# aws greengrass create-subscription-definition-version --subscription-definition-id ae260602-fb03-4f77-b22d-a297deda68de --subscriptions file:///var/folders/31/_mqnzdtj67v156b9v_ntl2940000gn/T/ansible.3QkwQqsub_def/subscription_definition.json
 - name: Create a subscription definition version
   block:
     - tempfile:
@@ -105,6 +99,7 @@
     - subscription_definition_id is defined
     - subscription_definition_version_arn is undefined or
       subscription_definition_version_arn == ""
+    - subscription_def_name is defined and subscription_def_name != ""
 
 - name: Clear subscription definition name for next pass
   set_fact:
