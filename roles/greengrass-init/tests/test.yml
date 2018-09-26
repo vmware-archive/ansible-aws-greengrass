@@ -1,6 +1,0 @@
----
-- hosts: localhost
-  remote_user: root
-  roles:
-    - vmware.ansible_role_greengrass_awscli
-    - greengrass-init

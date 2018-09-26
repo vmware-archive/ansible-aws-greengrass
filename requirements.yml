@@ -1,2 +1,3 @@
 ---
-- src: vmware.ansible_role_greengrass_awscli
+- src: vmware.greengrass_init
+  name: greengrass-init

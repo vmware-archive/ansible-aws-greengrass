@@ -6,7 +6,7 @@ ADD . /code
 WORKDIR /code
 
 RUN pip install -r requirements.txt
-RUN ansible-galaxy install -r requirements.yml
+RUN ansible-galaxy install -r requirements.yml -p roles
 RUN mkdir -p group_vars/all
 RUN echo "developer_user: root" >> group_vars/all/vars.yml
 

@@ -27,7 +27,7 @@ jobs:
   include:
     - stage: lint
       script:
-        - ansible-galaxy install -r requirements.yml
+        - ansible-galaxy install -r requirements.yml -p roles
         - >
           ansible-playbook site.yml -i inventory
           --check --skip-tag greengrass-core
@@ -35,7 +35,7 @@ jobs:
       env:
         - AWS_ARGS=--no-verify-ssl
       script:
-        - ansible-galaxy install -r requirements.yml
+        - ansible-galaxy install -r requirements.yml -p roles
         - >
           ansible-playbook roles/greengrass-init/tests/test.yml
           -i roles/greengrass-init/tests/inventory -vv || echo 'Not OK!'
