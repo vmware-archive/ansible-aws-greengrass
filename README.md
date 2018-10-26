@@ -94,7 +94,7 @@ docker run -it -v $PWD:/code vmware/ansible-aws-greengrass
 
 ### Prerequisites
 
-* You'll need Ansible
+* You'll need Ansible (2.5+)
 * Before first run, you'll need AWS credentials with at least IAM, IoT, and
 Greengrass permissions, and most likely with S3 read/write
 * You must ensure the current Greengrass Core distribution is available on S3

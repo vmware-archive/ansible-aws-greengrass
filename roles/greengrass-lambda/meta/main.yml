@@ -19,4 +19,5 @@ galaxy_info:
     - iot
     - serverless
 dependencies:
-  - role: vmware.ansible_role_greengrass_awscli
+  - src: vmware.ansible_role_greengrass_awscli
+    name: vmware.awscli

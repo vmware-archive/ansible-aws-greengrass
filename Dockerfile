@@ -7,6 +7,7 @@ ADD . /code
 WORKDIR /code
 
 RUN pip install -r requirements.txt
+RUN ansible-galaxy install -r requirements.yml -p roles
 
 CMD ["site.yml"]
 ENTRYPOINT ["ansible-playbook"]
