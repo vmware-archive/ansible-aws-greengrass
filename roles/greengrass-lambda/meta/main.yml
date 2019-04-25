@@ -20,4 +20,3 @@ galaxy_info:
     - serverless
 dependencies:
   - src: vmware.ansible_role_greengrass_awscli
-    name: vmware.awscli
