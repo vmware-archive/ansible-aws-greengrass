@@ -1,8 +1,11 @@
+# Copyright 2018 VMware, Inc.  All rights reserved.
+# SPDX-License-Identifier: Apache-2.0 OR GPL-3.0-only
+---
 galaxy_info:
   author: John Gardner
   description: AWS Greengrass Lambda automation (create, version functions)
   company: VMware
-  license: license (Apache)
+  license: license (Apache, GPLv3)
   min_ansible_version: 2.5
   platforms:
   - name: Debian

@@ -1,5 +1,5 @@
 # Copyright © 2018 VMware, Inc. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0 or GPL-3.0-only
 ---
 # Import the real tasks, in a unique file name for better navigation.
 - import_tasks: greengrass-core.yml
