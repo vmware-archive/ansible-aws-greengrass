@@ -1,5 +1,5 @@
 # Copyright © 2018 VMware, Inc. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0 or GPL-3.0-only
 ---
 # Create a deployment of a set of greengrass components
 # Currently assumes AWS credentials are already set up and AWS CLI is present.

@@ -1,5 +1,5 @@
 # Copyright © 2018 VMware, Inc. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0 or GPL-3.0-only
 [greengrass-core]
 172.16.1.51        ansible_connection=ssh        ansible_user=root greengrass_core_id='mygroup1_Core'
 172.16.1.52        ansible_connection=ssh        ansible_user=root greengrass_core_id='mygroup2_Core'
