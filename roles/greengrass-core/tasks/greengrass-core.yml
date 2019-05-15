@@ -58,7 +58,7 @@
 - name: download-greengrass
   get_url:
     url: "{{ greengrass_package_url }}"
-    dest: /tmp/greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
+    dest: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
   register: download_greengrass
   retries: 5
   delay: 5
@@ -68,8 +68,8 @@
 - name: download-greengrass-s3
   aws_s3:
     bucket: "{{ greengrass_s3_bucket }}"
-    object: greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
-    dest: /tmp/greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
+    object: greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
+    dest: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
     mode: get
     aws_access_key: "{{ aws_access_key }}"
     aws_secret_key: "{{ aws_secret_key }}"
@@ -91,12 +91,12 @@
 
 - name: Check that the greengrass install archive now exists
   stat:
-    path: /tmp/greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
+    path: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
   register: install_stat
 
 - name: unarchive-greengrass
   unarchive:
-    src: /tmp/greengrass-ubuntu-x86-64-{{ greengrass_version }}.tar.gz
+    src: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
     dest: /
     remote_src: yes
   when: install_stat.stat.exists
