@@ -59,6 +59,7 @@
   get_url:
     url: "{{ greengrass_package_url }}"
     dest: /tmp/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz
+    checksum: "{{ greengrass_checksum }}"
   register: download_greengrass
   retries: 5
   delay: 5
