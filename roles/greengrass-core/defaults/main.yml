@@ -1,7 +1,7 @@
 # Copyright © 2018 VMware, Inc. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0 or GPL-3.0-only
 ---
-greengrass_version: 1.9.4
+greengrass_version: 1.10.2
 
 # Define this to download from the web rather than S3
 #greengrass_package_url: "http://somewhere/greengrass-linux-x86-64-{{ greengrass_version }}.tar.gz"
